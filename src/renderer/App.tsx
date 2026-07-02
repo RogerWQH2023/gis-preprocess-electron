@@ -134,65 +134,68 @@ export default function App() {
   return (
     <CesiumIonAuthProvider>
       <div className="app-shell">
-      <header className="app-titlebar">
-        <div className="app-titlebar__brand">
-          <span className="app-titlebar__mark" aria-hidden="true" />
-          <span>GIS 数据预处理教学应用</span>
-        </div>
-        <WindowControls isMaximized={isMaximized} />
-      </header>
-
-      <div className="app-body">
-        <aside className="app-sidebar" aria-label="主界面导航">
-          <div className="app-sidebar__header">
-            <span className="app-sidebar__kicker">Renderer</span>
-            <strong>功能导航</strong>
+        <header className="app-titlebar">
+          <div className="app-titlebar__brand">
+            <span className="app-titlebar__mark" aria-hidden="true" />
+            <span>GIS实践 数据预处理教学应用</span>
           </div>
+          <WindowControls isMaximized={isMaximized} />
+        </header>
 
-          <nav className="sidebar-nav">
-            {navigationGroups.map((group) => (
-              <section className="sidebar-nav__group" key={group.title}>
-                <h2>{group.title}</h2>
-                <div className="sidebar-nav__items">
-                  {group.items.map((pageId) => {
-                    const page = pageRegistry[pageId];
-                    const isActive = page.id === activePageId;
-
-                    return (
-                      <button
-                        className="sidebar-nav__item"
-                        type="button"
-                        aria-current={isActive ? "page" : undefined}
-                        key={page.id}
-                        onClick={() => setActivePageId(page.id)}
-                      >
-                        <span className="sidebar-nav__mark" aria-hidden="true">
-                          {page.navMark}
-                        </span>
-                        <span>{page.title}</span>
-                      </button>
-                    );
-                  })}
-                </div>
-              </section>
-            ))}
-          </nav>
-
-          <CesiumIonAuthStatus />
-        </aside>
-
-        <main className="workspace">
-          <section className="workspace__heading">
-            <div>
-              <p className="workspace__eyebrow">{activePage.eyebrow}</p>
-              <h1>{activePage.title}</h1>
+        <div className="app-body">
+          <aside className="app-sidebar" aria-label="主界面导航">
+            <div className="app-sidebar__header">
+              <span className="app-sidebar__kicker">Renderer</span>
+              <strong>功能导航</strong>
             </div>
-            <span className="workspace__badge">{activePage.badge}</span>
-          </section>
 
-          <ActivePage />
-        </main>
-      </div>
+            <nav className="sidebar-nav">
+              {navigationGroups.map((group) => (
+                <section className="sidebar-nav__group" key={group.title}>
+                  <h2>{group.title}</h2>
+                  <div className="sidebar-nav__items">
+                    {group.items.map((pageId) => {
+                      const page = pageRegistry[pageId];
+                      const isActive = page.id === activePageId;
+
+                      return (
+                        <button
+                          className="sidebar-nav__item"
+                          type="button"
+                          aria-current={isActive ? "page" : undefined}
+                          key={page.id}
+                          onClick={() => setActivePageId(page.id)}
+                        >
+                          <span
+                            className="sidebar-nav__mark"
+                            aria-hidden="true"
+                          >
+                            {page.navMark}
+                          </span>
+                          <span>{page.title}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </section>
+              ))}
+            </nav>
+
+            <CesiumIonAuthStatus />
+          </aside>
+
+          <main className="workspace">
+            <section className="workspace__heading">
+              <div>
+                <p className="workspace__eyebrow">{activePage.eyebrow}</p>
+                <h1>{activePage.title}</h1>
+              </div>
+              <span className="workspace__badge">{activePage.badge}</span>
+            </section>
+
+            <ActivePage />
+          </main>
+        </div>
       </div>
     </CesiumIonAuthProvider>
   );

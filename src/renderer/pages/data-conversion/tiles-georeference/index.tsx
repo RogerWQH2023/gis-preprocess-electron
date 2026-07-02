@@ -183,7 +183,10 @@ export function ThreeDgsTilesGeoreferencePage() {
   }
 
   return (
-    <section className="converter-panel" aria-labelledby="georeference-title">
+    <section
+      className="converter-panel converter-panel--wide"
+      aria-labelledby="georeference-title"
+    >
       <div className="converter-panel__header">
         <div>
           <p className="workspace__eyebrow">工具 02</p>

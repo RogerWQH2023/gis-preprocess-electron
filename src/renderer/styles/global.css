@@ -358,6 +358,14 @@ button {
   max-width: 1080px;
 }
 
+.converter-panel--wide,
+.placeholder-panel--wide {
+  width: min(100%, 1440px);
+  max-width: 1440px;
+  box-sizing: border-box;
+  margin-inline: auto;
+}
+
 .converter-panel {
   display: grid;
   gap: 18px;
@@ -394,6 +402,10 @@ button {
   color: #4b5b70;
   font-size: 14px;
   line-height: 1.7;
+}
+
+.placeholder-panel--wide .placeholder-panel__summary {
+  max-width: none;
 }
 
 .converter-panel__header {
@@ -836,7 +848,10 @@ button {
 
 .cesium-test-page {
   min-width: 0;
+  width: min(100%, 1440px);
+  max-width: 1440px;
   min-height: min(760px, calc(100vh - 168px));
+  margin-inline: auto;
 }
 
 .cesium-stage {

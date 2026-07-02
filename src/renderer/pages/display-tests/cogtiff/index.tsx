@@ -1,7 +1,10 @@
 export function CogTiffTestPage() {
   // COGTiff 测试后续可能包含远程 HTTP Range 访问，本页先预留独立展示容器。
   return (
-    <section className="placeholder-panel" aria-labelledby="cogtiff-test-title">
+    <section
+      className="placeholder-panel placeholder-panel--wide"
+      aria-labelledby="cogtiff-test-title"
+    >
       <p className="workspace__eyebrow">预留界面</p>
       <h2 id="cogtiff-test-title">COGTiff测试</h2>
       <p className="placeholder-panel__summary">

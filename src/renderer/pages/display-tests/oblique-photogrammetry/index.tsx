@@ -1,7 +1,10 @@
 export function ObliquePhotogrammetryTestPage() {
   // 倾斜摄影模型通常也是 3D Tiles 形态，先保留独立入口避免与 3DGS 测试混用。
   return (
-    <section className="placeholder-panel" aria-labelledby="oblique-test-title">
+    <section
+      className="placeholder-panel placeholder-panel--wide"
+      aria-labelledby="oblique-test-title"
+    >
       <p className="workspace__eyebrow">预留界面</p>
       <h2 id="oblique-test-title">倾斜摄影模型测试</h2>
       <p className="placeholder-panel__summary">
