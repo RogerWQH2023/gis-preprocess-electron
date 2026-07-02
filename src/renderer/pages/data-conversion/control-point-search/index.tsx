@@ -102,6 +102,27 @@ function clamp(value: number, min: number, max: number): number {
   return Math.min(Math.max(value, min), max);
 }
 
+function shouldIgnoreKeyboardEvent(event: KeyboardEvent): boolean {
+  if (event.altKey || event.ctrlKey || event.metaKey) {
+    return true;
+  }
+
+  const target = event.target;
+
+  if (!(target instanceof HTMLElement)) {
+    return false;
+  }
+
+  const tagName = target.tagName.toLowerCase();
+
+  return (
+    target.isContentEditable ||
+    tagName === "input" ||
+    tagName === "textarea" ||
+    tagName === "select"
+  );
+}
+
 function createObservation(viewer: CesiumViewer, position: Cartesian2) {
   const ray = viewer.camera.getPickRay(position);
 
@@ -275,20 +296,33 @@ function focusTileset(
   resetLocalNavigation(viewer, navigation, center, radius);
 }
 
-function focusControlPoint(
+function moveLocalCameraTarget(
   viewer: CesiumViewer,
   navigation: LocalCameraNavigation,
-  point: LocalVector3,
-  modelRadius: number,
+  horizontalDirection: number,
+  verticalDirection: number,
 ): void {
-  const normalizedRadius = Math.max(modelRadius, 1);
+  const step = Math.max(navigation.distance * 0.06, navigation.radius * 0.01);
+  const horizontalOffset = Cartesian3.multiplyByScalar(
+    viewer.camera.rightWC,
+    horizontalDirection * step,
+    new Cartesian3(),
+  );
+  const verticalOffset = Cartesian3.multiplyByScalar(
+    viewer.camera.upWC,
+    verticalDirection * step,
+    new Cartesian3(),
+  );
+  const offset = Cartesian3.add(
+    horizontalOffset,
+    verticalOffset,
+    new Cartesian3(),
+  );
 
-  navigation.target = toCartesian3(point);
-  navigation.radius = normalizedRadius;
-  navigation.distance = clamp(
-    Math.max(normalizedRadius * 0.35, navigation.minDistance * 2),
-    navigation.minDistance,
-    navigation.maxDistance,
+  navigation.target = Cartesian3.add(
+    navigation.target,
+    offset,
+    new Cartesian3(),
   );
   navigation.isDragging = false;
   navigation.dragMoved = false;
@@ -398,9 +432,9 @@ export function ControlPointSearchPage() {
   const [activeControlPointId, setActiveControlPointId] = useState<
     string | null
   >(null);
-  const [highlightedControlPointId, setHighlightedControlPointId] = useState<
-    string | null
-  >(null);
+  const [hiddenControlPointIds, setHiddenControlPointIds] = useState<
+    Set<string>
+  >(new Set());
   const [modelRadius, setModelRadius] = useState(1);
   const [message, setMessage] = useState("局部坐标模式：XYZ 单位继承模型数据。");
   const [errorMessage, setErrorMessage] = useState("");
@@ -542,7 +576,39 @@ export function ControlPointSearchPage() {
       ScreenSpaceEventType.LEFT_CLICK,
     );
 
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (shouldIgnoreKeyboardEvent(event)) {
+        return;
+      }
+
+      const key = event.key.toLowerCase();
+      const navigation = cameraNavigationRef.current;
+
+      if (key === "w") {
+        event.preventDefault();
+        moveLocalCameraTarget(viewer, navigation, 0, 1);
+      } else if (key === "s") {
+        event.preventDefault();
+        moveLocalCameraTarget(viewer, navigation, 0, -1);
+      } else if (key === "a") {
+        event.preventDefault();
+        moveLocalCameraTarget(viewer, navigation, -1, 0);
+      } else if (key === "d") {
+        event.preventDefault();
+        moveLocalCameraTarget(viewer, navigation, 1, 0);
+      } else {
+        return;
+      }
+
+      if (!event.repeat) {
+        setMessage("视角中心已移动，滚轮将围绕新的中心缩放。");
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+
     return () => {
+      window.removeEventListener("keydown", handleKeyDown);
       handler.destroy();
       tilesetRef.current = null;
       if (!viewer.isDestroyed()) {
@@ -566,47 +632,40 @@ export function ControlPointSearchPage() {
     markerIdsRef.current.clear();
 
     for (const point of controlPoints) {
-      if (!point.local) {
+      if (!point.local || hiddenControlPointIds.has(point.id)) {
         continue;
       }
 
       const markerId = `control-point-marker-${point.id}`;
       const { x, y, z } = point.local;
-      const isHighlighted = point.id === highlightedControlPointId;
 
       viewer.entities.add({
         id: markerId,
         position: toCartesian3(point.local),
         point: {
-          pixelSize: isHighlighted ? 17 : 11,
-          color: isHighlighted
-            ? Color.fromCssColorString("#ffd43b")
-            : Color.fromCssColorString("#f03e3e"),
-          outlineColor: isHighlighted
-            ? Color.fromCssColorString("#172033")
-            : Color.WHITE,
-          outlineWidth: isHighlighted ? 3 : 2,
+          pixelSize: 11,
+          color: Color.fromCssColorString("#f03e3e"),
+          outlineColor: Color.WHITE,
+          outlineWidth: 2,
           disableDepthTestDistance: Number.POSITIVE_INFINITY,
         },
         label: {
-          text: `${point.id}${isHighlighted ? " · 显影" : ""}\n${formatNumber(x)}, ${formatNumber(y)}, ${formatNumber(z)}`,
-          font: isHighlighted ? "700 13px sans-serif" : "12px sans-serif",
+          text: `${point.id}\n${formatNumber(x)}, ${formatNumber(y)}, ${formatNumber(z)}`,
+          font: "12px sans-serif",
           fillColor: Color.WHITE,
           outlineColor: Color.BLACK,
           outlineWidth: 3,
           style: LabelStyle.FILL_AND_OUTLINE,
           showBackground: true,
-          backgroundColor: Color.fromCssColorString(
-            isHighlighted ? "#7a4f01" : "#101828",
-          ).withAlpha(0.82),
+          backgroundColor: Color.fromCssColorString("#101828").withAlpha(0.82),
           verticalOrigin: VerticalOrigin.BOTTOM,
-          pixelOffset: new Cartesian2(0, isHighlighted ? -22 : -16),
+          pixelOffset: new Cartesian2(0, -16),
           disableDepthTestDistance: Number.POSITIVE_INFINITY,
         },
       });
       markerIdsRef.current.add(markerId);
     }
-  }, [controlPoints, highlightedControlPointId]);
+  }, [controlPoints, hiddenControlPointIds]);
 
   async function loadTileset(url: string, info?: Partial<LoadedTilesetInfo>) {
     const viewer = viewerRef.current;
@@ -631,7 +690,7 @@ export function ControlPointSearchPage() {
       nextControlPointIndexRef.current = 1;
       setControlPoints([]);
       setActiveControlPointId(null);
-      setHighlightedControlPointId(null);
+      setHiddenControlPointIds(new Set());
 
       const tileset = await Cesium3DTileset.fromUrl(trimmedUrl, {
         maximumScreenSpaceError: 8,
@@ -729,10 +788,6 @@ export function ControlPointSearchPage() {
       setActiveControlPointId(null);
     }
 
-    if (highlightedControlPointId === pointId) {
-      setHighlightedControlPointId(null);
-    }
-
     const viewer = viewerRef.current;
     const markerId = `control-point-marker-${pointId}`;
 
@@ -741,13 +796,15 @@ export function ControlPointSearchPage() {
     }
 
     markerIdsRef.current.delete(markerId);
+    setHiddenControlPointIds((currentIds) => {
+      const nextIds = new Set(currentIds);
+
+      nextIds.delete(pointId);
+      return nextIds;
+    });
   }
 
   function handleClearObservations(pointId: string): void {
-    if (highlightedControlPointId === pointId) {
-      setHighlightedControlPointId(null);
-    }
-
     setControlPoints((currentPoints) =>
       currentPoints.map((point) =>
         point.id === pointId
@@ -761,6 +818,12 @@ export function ControlPointSearchPage() {
           : point,
       ),
     );
+    setHiddenControlPointIds((currentIds) => {
+      const nextIds = new Set(currentIds);
+
+      nextIds.delete(pointId);
+      return nextIds;
+    });
   }
 
   function handleUndoLastObservation(pointId: string): void {
@@ -768,13 +831,6 @@ export function ControlPointSearchPage() {
 
     if (!targetPoint || targetPoint.observations.length === 0) {
       return;
-    }
-
-    if (
-      highlightedControlPointId === pointId &&
-      targetPoint.observations.length <= 2
-    ) {
-      setHighlightedControlPointId(null);
     }
 
     setControlPoints((currentPoints) =>
@@ -786,27 +842,41 @@ export function ControlPointSearchPage() {
         return recomputeControlPoint(point, point.observations.slice(0, -1));
       }),
     );
+    if (targetPoint.observations.length <= 2) {
+      setHiddenControlPointIds((currentIds) => {
+        const nextIds = new Set(currentIds);
+
+        nextIds.delete(pointId);
+        return nextIds;
+      });
+    }
     setErrorMessage("");
     setMessage(`${pointId} 已撤销上一条观测。`);
   }
 
-  function handleRevealControlPoint(point: ControlPoint): void {
-    const viewer = viewerRef.current;
-
-    if (!viewer || !point.local) {
+  function handleToggleControlPointVisibility(point: ControlPoint): void {
+    if (!point.local) {
       return;
     }
 
     setActiveControlPointId(point.id);
-    setHighlightedControlPointId(point.id);
-    focusControlPoint(
-      viewer,
-      cameraNavigationRef.current,
-      point.local,
-      modelRadius,
-    );
+    setHiddenControlPointIds((currentIds) => {
+      const nextIds = new Set(currentIds);
+
+      if (nextIds.has(point.id)) {
+        nextIds.delete(point.id);
+      } else {
+        nextIds.add(point.id);
+      }
+
+      return nextIds;
+    });
     setErrorMessage("");
-    setMessage(`${point.id} 已显影。`);
+    setMessage(
+      hiddenControlPointIds.has(point.id)
+        ? `${point.id} 已显示。`
+        : `${point.id} 已隐藏，可继续添加观测。`,
+    );
   }
 
   function handleToggleConfirmed(pointId: string): void {
@@ -975,6 +1045,7 @@ export function ControlPointSearchPage() {
               ) : (
                 controlPoints.map((point) => {
                   const isActive = point.id === activeControlPointId;
+                  const isHidden = hiddenControlPointIds.has(point.id);
                   const statusClass = getControlPointStatusClass(
                     point,
                     modelRadius,
@@ -1039,10 +1110,12 @@ export function ControlPointSearchPage() {
                         <button
                           className="secondary-button"
                           type="button"
-                          onClick={() => handleRevealControlPoint(point)}
+                          onClick={() =>
+                            handleToggleControlPointVisibility(point)
+                          }
                           disabled={!point.local}
                         >
-                          显影
+                          {isHidden ? "显示点" : "隐藏点"}
                         </button>
                         <button
                           className="secondary-button"
