@@ -2,12 +2,16 @@ import { useEffect, useRef, useState } from "react";
 import {
   Cartesian3,
   Cesium3DTileset,
-  Color,
-  HeadingPitchRange,
-  Math as CesiumMath,
+  ImageryLayer,
+  Ion,
+  Terrain,
   Viewer,
+  type Viewer as CesiumViewer,
 } from "cesium";
 import "cesium/Build/Cesium/Widgets/widgets.css";
+
+import { useCesiumIonAuth } from "../../../cesiumIonAuthContext";
+import { loadCesium3DTileset, removeCesium3DTileset } from "./loadTileset";
 
 type LoadStatus = "idle" | "loading" | "loaded" | "error";
 
@@ -33,16 +37,16 @@ function readErrorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
 }
 
-function flyToDefaultView(viewer: Viewer): void {
-  viewer.camera.flyTo({
+function setDefaultView(viewer: CesiumViewer): void {
+  viewer.camera.setView({
     destination: Cartesian3.fromDegrees(104, 32, 18_000_000),
-    duration: 0.8,
   });
 }
 
 export function ThreeDgsTilesTestPage() {
+  const { token, hasToken } = useCesiumIonAuth();
   const containerRef = useRef<HTMLDivElement | null>(null);
-  const viewerRef = useRef<Viewer | null>(null);
+  const viewerRef = useRef<CesiumViewer | null>(null);
   const tilesetRef = useRef<Cesium3DTileset | null>(null);
   const previewApi = window.electronAPI?.tools.threeDgsTiles ?? null;
   const [status, setStatus] = useState<LoadStatus>("idle");
@@ -56,9 +60,14 @@ export function ThreeDgsTilesTestPage() {
       return;
     }
 
+    setLoadedTileset(null);
+    setStatus("idle");
+    setErrorMessage("");
+    Ion.defaultAccessToken = token;
+
     const viewer = new Viewer(containerRef.current, {
       animation: false,
-      baseLayer: false,
+      baseLayer: hasToken ? ImageryLayer.fromWorldImagery({}) : false,
       baseLayerPicker: false,
       fullscreenButton: false,
       geocoder: false,
@@ -67,27 +76,22 @@ export function ThreeDgsTilesTestPage() {
       navigationHelpButton: false,
       sceneModePicker: false,
       selectionIndicator: false,
+      terrain: hasToken ? Terrain.fromWorldTerrain() : undefined,
       timeline: false,
-      shouldAnimate: true,
     });
 
-    // 不依赖在线影像服务，直接用稳定底色突出 Cesium 地球本体。
-    viewer.scene.globe.baseColor = Color.fromCssColorString("#2f6f9f");
-    viewer.scene.globe.enableLighting = true;
-    viewer.scene.globe.showGroundAtmosphere = true;
-    if (viewer.scene.skyAtmosphere) {
-      viewer.scene.skyAtmosphere.show = true;
-    }
-    viewer.scene.backgroundColor = Color.fromCssColorString("#07111f");
-    flyToDefaultView(viewer);
+    // 无 token 时不调用 Cesium ion 官方资源，只保留基础球体和本地 3D Tiles 加载。
+    setDefaultView(viewer);
     viewerRef.current = viewer;
 
     return () => {
       tilesetRef.current = null;
+      if (viewerRef.current) {
+        viewerRef.current.destroy();
+      }
       viewerRef.current = null;
-      viewer.destroy();
     };
-  }, []);
+  }, [hasToken, token]);
 
   async function handleSelectAndLoadTileset(): Promise<void> {
     if (!previewApi || !viewerRef.current) {
@@ -108,24 +112,16 @@ export function ThreeDgsTilesTestPage() {
       setErrorMessage("");
 
       if (tilesetRef.current) {
-        viewer.scene.primitives.remove(tilesetRef.current);
+        removeCesium3DTileset(viewer, tilesetRef.current);
         tilesetRef.current = null;
       }
 
-      const tileset = await Cesium3DTileset.fromUrl(selection.url);
+      const tileset = await loadCesium3DTileset(viewer, selection.url);
 
-      viewer.scene.primitives.add(tileset);
       tilesetRef.current = tileset;
       setLoadedTileset({ name: selection.name, path: selection.path });
       setStatus("loaded");
-      await viewer.flyTo(tileset, {
-        duration: 1.1,
-        offset: new HeadingPitchRange(
-          CesiumMath.toRadians(25),
-          CesiumMath.toRadians(-28),
-          0,
-        ),
-      });
+      await viewer.zoomTo(tileset);
     } catch (error) {
       setStatus("error");
       setErrorMessage(readErrorMessage(error));
@@ -139,16 +135,19 @@ export function ThreeDgsTilesTestPage() {
       return;
     }
 
-    viewer.scene.primitives.remove(tilesetRef.current);
+    removeCesium3DTileset(viewer, tilesetRef.current);
     tilesetRef.current = null;
     setLoadedTileset(null);
     setStatus("idle");
     setErrorMessage("");
-    flyToDefaultView(viewer);
+    setDefaultView(viewer);
   }
 
   return (
-    <section className="cesium-test-page" aria-labelledby="three-dgs-test-title">
+    <section
+      className="cesium-test-page"
+      aria-labelledby="three-dgs-test-title"
+    >
       <div className="cesium-stage">
         <div className="cesium-stage__viewer" ref={containerRef} />
         <div className="cesium-stage__panel">
@@ -165,7 +164,9 @@ export function ThreeDgsTilesTestPage() {
           </div>
 
           {!previewApi ? (
-            <p className="runtime-warning">请在 Electron 桌面环境中运行本工具。</p>
+            <p className="runtime-warning">
+              请在 Electron 桌面环境中运行本工具。
+            </p>
           ) : null}
 
           <div className="converter-actions">
@@ -186,6 +187,13 @@ export function ThreeDgsTilesTestPage() {
               清除模型
             </button>
           </div>
+
+          <p className="cesium-stage__note">
+            课程作业默认做法：把 3D Tiles 目录放进 public，例如
+            public/3dtiles/demo/tileset.json，代码里直接加载
+            /3dtiles/demo/tileset.json。本页面的文件选择只服务于 Electron
+            桌面演示。只有侧边栏填入 Cesium ion token 后，本页才会请求官方底图和地形。
+          </p>
 
           {loadedTileset ? (
             <dl className="cesium-stage__details">

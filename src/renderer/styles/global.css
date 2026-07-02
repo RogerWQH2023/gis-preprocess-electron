@@ -78,7 +78,7 @@ button {
 
 .app-sidebar {
   display: grid;
-  grid-template-rows: auto 1fr;
+  grid-template-rows: auto 1fr auto;
   min-width: 0;
   min-height: 0;
   border-right: 1px solid #d8e0ec;
@@ -178,6 +178,98 @@ button {
 .sidebar-nav__item[aria-current="page"] .sidebar-nav__mark {
   background: #1864ab;
   color: #ffffff;
+}
+
+.cesium-auth {
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  border-top: 1px solid #edf1f7;
+  background: #ffffff;
+}
+
+.cesium-auth__summary {
+  display: grid;
+  grid-template-columns: 10px minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 42px;
+  padding: 8px 10px;
+  border: 1px solid #d8e0ec;
+  border-radius: 8px;
+  background: #f8fafc;
+  color: #243348;
+  text-align: left;
+  cursor: pointer;
+}
+
+.cesium-auth__summary strong,
+.cesium-auth__summary small {
+  display: block;
+  line-height: 1.35;
+}
+
+.cesium-auth__summary strong {
+  font-size: 13px;
+}
+
+.cesium-auth__summary small {
+  color: #667085;
+  font-size: 12px;
+}
+
+.cesium-auth__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #98a2b3;
+}
+
+.cesium-auth__dot--active {
+  background: #2b8a3e;
+}
+
+.cesium-auth__panel {
+  display: grid;
+  gap: 8px;
+}
+
+.cesium-auth__input {
+  width: 100%;
+  min-height: 36px;
+  box-sizing: border-box;
+  border: 1px solid #cfd8e7;
+  border-radius: 8px;
+  padding: 0 10px;
+  color: #1d2738;
+  font: inherit;
+  font-size: 13px;
+}
+
+.cesium-auth__actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.cesium-auth__actions button {
+  min-height: 34px;
+  border: 1px solid #cfd8e7;
+  border-radius: 6px;
+  background: #ffffff;
+  color: #344054;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.cesium-auth__actions button:hover:not(:disabled) {
+  background: #f2f6fb;
+}
+
+.cesium-auth__actions button:disabled {
+  cursor: default;
+  opacity: 0.5;
 }
 
 .window-controls {
@@ -751,10 +843,9 @@ button {
   position: relative;
   min-height: min(760px, calc(100vh - 168px));
   overflow: hidden;
-  border: 1px solid #0f2238;
+  border: 1px solid #d8e0ec;
   border-radius: 8px;
-  background: #07111f;
-  box-shadow: 0 18px 42px rgb(16 32 51 / 16%);
+  background: #ffffff;
 }
 
 .cesium-stage__viewer {
@@ -779,10 +870,9 @@ button {
   max-height: calc(100% - 32px);
   overflow: auto;
   padding: 16px;
-  border: 1px solid rgb(213 224 237 / 72%);
+  border: 1px solid #d8e0ec;
   border-radius: 8px;
-  background: rgb(255 255 255 / 94%);
-  box-shadow: 0 18px 36px rgb(0 0 0 / 18%);
+  background: #ffffff;
 }
 
 .cesium-stage__panel-header {
@@ -804,6 +894,13 @@ button {
   display: grid;
   gap: 8px;
   margin: 0;
+}
+
+.cesium-stage__note {
+  margin: 0;
+  color: #4b5b70;
+  font-size: 13px;
+  line-height: 1.6;
 }
 
 .cesium-stage__details div {
