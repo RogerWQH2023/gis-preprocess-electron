@@ -12,6 +12,7 @@ const CHANNELS = {
   convertThreeDgsTiles: "three-dgs-tiles:convert",
   threeDgsConversionLog: "three-dgs-tiles:conversion-log",
   revealThreeDgsOutputDirectory: "three-dgs-tiles:reveal-output-directory",
+  selectThreeDgsTileset: "three-dgs-tiles-preview:select-tileset",
 } as const;
 
 type RemoveListener = () => void;
@@ -24,6 +25,9 @@ type ThreeDgsSelectPlyFileResult =
 type ThreeDgsSelectOutputDirectoryResult =
   | { canceled: true }
   | { canceled: false; path: string };
+type ThreeDgsSelectTilesetResult =
+  | { canceled: true }
+  | { canceled: false; path: string; name: string; url: string };
 type ThreeDgsConvertRequest = {
   taskId: string;
   inputPath: string;
@@ -98,6 +102,10 @@ const electronAPI = {
           CHANNELS.revealThreeDgsOutputDirectory,
           outputDir
         ) as Promise<void>,
+      selectTileset: () =>
+        ipcRenderer.invoke(
+          CHANNELS.selectThreeDgsTileset
+        ) as Promise<ThreeDgsSelectTilesetResult>,
       onConversionLog: (
         callback: ThreeDgsConversionLogCallback
       ): RemoveListener => {

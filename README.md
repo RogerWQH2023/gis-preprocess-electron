@@ -28,7 +28,7 @@
 - TypeScript：统一主进程、预加载脚本和渲染进程的类型约束。
 - ESLint：基础代码质量检查。
 - electron-builder：后续用于 Windows、macOS、Linux 应用打包。
-- pnpm：依赖管理工具，已配置 pnpm 11 的构建脚本审批项。
+- pnpm：统一使用 pnpm 11 作为依赖管理工具，已配置构建脚本审批项。
 - 3DGS-PLY-3DTiles-Converter：首个接入的数据处理库，用于将 Gaussian Splatting PLY 转为 3D Tiles。
 
 ## 目录结构
@@ -67,7 +67,7 @@ pnpm build
 ## 打包说明
 
 - `pnpm build:app` 会先执行完整前后端构建，再通过 `electron-builder` 生成 Windows x64 便携版程序。
-- 当前 `package.json` 使用 `pnpm.overrides` 将 `@electron/get` 固定到 `3.1.0`。这是为了避免 `electron-builder 26.15.x` 的内部依赖落到缺少 `ElectronDownloadCacheMode` 的 `@electron/get 3.0.0`，导致打包时报 `Cannot read properties of undefined (reading 'ReadWrite')`。
+- 当前 `pnpm-workspace.yaml` 使用 `overrides` 将 `@electron/get` 固定到 `3.1.0`。这是为了避免 `electron-builder 26.15.x` 的内部依赖落到缺少 `ElectronDownloadCacheMode` 的 `@electron/get 3.0.0`，导致打包时报 `Cannot read properties of undefined (reading 'ReadWrite')`。
 - Windows 打包配置使用本地 `node_modules/electron/dist` 作为 `electronDist`，避免打包阶段重复从 GitHub 下载 Electron zip。
 - `scripts/run-electron-builder.mjs` 会为打包阶段设置 Electron 和 electron-builder 二进制镜像，减少国内网络访问 GitHub release 超时的问题。
 - 使用本地 `electronDist` 时，`scripts/cleanup-electron-dist.cjs` 会在打包过程中移除 Electron 默认模板文件，避免 `default_app.asar` 混入最终产物。

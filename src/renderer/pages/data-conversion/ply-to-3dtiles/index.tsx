@@ -28,6 +28,7 @@ const statusText: Record<ToolStatus, string> = {
 };
 
 function createTaskId(): string {
+  // 每次转换生成独立任务 ID，便于主进程日志只回流到当前页面。
   return globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random()}`;
 }
 
@@ -35,7 +36,7 @@ function readErrorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
 }
 
-export function ThreeDgsTilesConverter() {
+export function PlyTo3dTilesPage() {
   const converterApi = window.electronAPI?.tools.threeDgsTiles ?? null;
   const activeTaskIdRef = useRef<string | null>(null);
   const [inputPath, setInputPath] = useState("");
@@ -59,6 +60,7 @@ export function ThreeDgsTilesConverter() {
       return "";
     }
 
+    // 输出目录预览只在前台拼接展示，不提前访问真实文件系统。
     return joinPreviewPath(outputParentDir, `${getPathStem(inputPath)}-3dtiles`);
   }, [inputPath, outputParentDir]);
 
@@ -68,6 +70,7 @@ export function ThreeDgsTilesConverter() {
     }
 
     return converterApi.onConversionLog((log) => {
+      // 只接收当前任务的日志，避免后续多任务并行时出现日志串台。
       if (log.taskId !== activeTaskIdRef.current) {
         return;
       }
@@ -307,7 +310,10 @@ export function ThreeDgsTilesConverter() {
       <div className="log-panel" aria-live="polite">
         {logs.length > 0 ? (
           logs.map((log, index) => (
-            <p className={`log-line log-line--${log.level}`} key={`${log.createdAt}-${index}`}>
+            <p
+              className={`log-line log-line--${log.level}`}
+              key={`${log.createdAt}-${index}`}
+            >
               <span>{new Date(log.createdAt).toLocaleTimeString()}</span>
               {log.message}
             </p>

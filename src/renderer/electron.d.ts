@@ -11,6 +11,10 @@ type ThreeDgsSelectOutputDirectoryResult =
   | { canceled: true }
   | { canceled: false; path: string };
 
+type ThreeDgsSelectTilesetResult =
+  | { canceled: true }
+  | { canceled: false; path: string; name: string; url: string };
+
 type ThreeDgsConvertRequest = {
   taskId: string;
   inputPath: string;
@@ -63,6 +67,7 @@ declare global {
             request: ThreeDgsConvertRequest
           ) => Promise<ThreeDgsConvertResult>;
           revealOutputDirectory: (outputDir: string) => Promise<void>;
+          selectTileset: () => Promise<ThreeDgsSelectTilesetResult>;
           onConversionLog: (
             callback: (log: ThreeDgsConversionLog) => void
           ) => () => void;
