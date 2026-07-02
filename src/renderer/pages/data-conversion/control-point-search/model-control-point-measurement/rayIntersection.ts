@@ -1,15 +1,4 @@
-export type LocalVector3 = {
-  x: number;
-  y: number;
-  z: number;
-};
-
-export type RayObservation = {
-  id: string;
-  origin: LocalVector3;
-  direction: LocalVector3;
-  createdAt: string;
-};
+import type { LocalVector3, RayObservation } from "./types";
 
 export type RayIntersectionResult = {
   point: LocalVector3;

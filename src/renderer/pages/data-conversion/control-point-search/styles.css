@@ -8,8 +8,8 @@
 }
 
 .control-point-search__shell {
-  display: grid;
-  grid-template-rows: auto auto minmax(0, 1fr) auto;
+  display: flex;
+  flex-direction: column;
   height: 100%;
   min-height: 0;
   max-height: 100%;
@@ -19,21 +19,59 @@
   background: #ffffff;
 }
 
-.control-point-search__toolbar {
-  display: flex;
-  align-items: start;
-  justify-content: space-between;
-  gap: 16px;
-  padding: 14px 16px;
-  border-bottom: 1px solid #e6edf6;
-}
-
-.control-point-search__toolbar h2 {
+.control-point-search__subheader h3 {
   margin: 6px 0 0;
   color: #18283b;
   font-size: 20px;
   line-height: 1.25;
   letter-spacing: 0;
+}
+
+.control-point-search__mode-switch {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 3px;
+  min-width: 300px;
+  padding: 3px;
+  border: 1px solid #cfd8e7;
+  border-radius: 8px;
+  background: #eef3f9;
+}
+
+.control-point-search__mode-button {
+  min-height: 34px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: #4d5b70;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.control-point-search__mode-button[aria-selected="true"] {
+  background: #ffffff;
+  color: #1864ab;
+  box-shadow: 0 1px 4px rgb(16 32 51 / 12%);
+}
+
+.control-point-search__subheader {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 16px;
+  border-bottom: 1px solid #e6edf6;
+  background: #ffffff;
+}
+
+.control-point-search__subheader-actions {
+  display: flex;
+  align-items: center;
+  justify-content: end;
+  gap: 12px;
+  min-width: 0;
 }
 
 .control-point-search__load-row {
@@ -43,6 +81,20 @@
   align-items: center;
   padding: 12px 16px;
   border-bottom: 1px solid #e6edf6;
+}
+
+.control-point-search__surface-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  padding: 12px 16px;
+  border-bottom: 1px solid #e6edf6;
+}
+
+.control-point-search__surface-actions .primary-button,
+.control-point-search__surface-actions .secondary-button {
+  min-width: 132px;
 }
 
 .control-point-search__input {
@@ -59,6 +111,7 @@
 }
 
 .control-point-search__main {
+  flex: 1 1 auto;
   display: grid;
   grid-template-columns: minmax(0, 1fr) 360px;
   min-height: 0;
@@ -72,11 +125,50 @@
   background: #151922;
 }
 
+.control-point-search__cesium-container {
+  position: absolute;
+  inset: 0;
+}
+
 .control-point-search__viewer .cesium-viewer,
 .control-point-search__viewer .cesium-widget,
 .control-point-search__viewer .cesium-widget canvas {
   width: 100%;
   height: 100%;
+}
+
+.control-point-search__map-search {
+  position: absolute;
+  z-index: 2;
+  top: 12px;
+  left: 12px;
+  display: flex;
+  gap: 8px;
+  max-width: calc(100% - 24px);
+  padding: 8px;
+  border: 1px solid rgb(207 216 231 / 90%);
+  border-radius: 8px;
+  background: rgb(255 255 255 / 92%);
+  box-shadow: 0 8px 20px rgb(15 23 42 / 18%);
+}
+
+.control-point-search__map-search input {
+  width: min(220px, 52vw);
+  min-width: 0;
+  min-height: 34px;
+  box-sizing: border-box;
+  border: 1px solid #cfd8e7;
+  border-radius: 6px;
+  padding: 0 10px;
+  color: #1d2738;
+  font: inherit;
+  font-size: 13px;
+}
+
+.control-point-search__map-search .primary-button {
+  min-width: 58px;
+  min-height: 34px;
+  padding: 0 12px;
 }
 
 .control-point-search__panel {
@@ -89,6 +181,33 @@
   padding: 14px;
   border-left: 1px solid #d8e0ec;
   background: #f8fafc;
+}
+
+.control-point-search__placeholder {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+  padding: 14px;
+  border: 1px solid #d8e0ec;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.control-point-search__placeholder h3,
+.control-point-search__placeholder p {
+  margin: 0;
+}
+
+.control-point-search__placeholder h3 {
+  color: #18283b;
+  font-size: 16px;
+  line-height: 1.35;
+}
+
+.control-point-search__placeholder p {
+  color: #4b5b70;
+  font-size: 13px;
+  line-height: 1.7;
 }
 
 .control-point-search__details,
@@ -255,6 +374,10 @@
   gap: 8px;
 }
 
+.control-point-search__item-actions--surface {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
 .control-point-search__item-actions .secondary-button {
   min-width: 0;
   min-height: 34px;
@@ -287,6 +410,11 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .control-point-search__surface-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .control-point-search__input {
     grid-column: 1 / -1;
   }
@@ -303,13 +431,25 @@
 }
 
 @media (max-width: 720px) {
-  .control-point-search__toolbar,
+  .control-point-search__subheader,
   .control-point-search__status {
     align-items: start;
     flex-direction: column;
   }
 
+  .control-point-search__subheader-actions {
+    width: 100%;
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .control-point-search__mode-switch {
+    width: 100%;
+    min-width: 0;
+  }
+
   .control-point-search__load-row,
+  .control-point-search__surface-actions,
   .control-point-search__active dl,
   .control-point-search__coords,
   .control-point-search__item-actions {

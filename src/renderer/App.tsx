@@ -54,7 +54,7 @@ const pageRegistry: Record<PageId, NavigationPage> = {
   },
   "control-point-search": {
     id: "control-point-search",
-    title: "控制点寻找",
+    title: "控制点测定",
     eyebrow: "数据转换工作台",
     badge: "Cesium 基础环境",
     navMark: "点",
