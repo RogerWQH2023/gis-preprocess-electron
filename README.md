@@ -16,7 +16,8 @@
 - 已完成 `preload.cts` 安全桥接，只向渲染进程暴露受控的 `window.electronAPI`。
 - 已完成无边框窗口和基础窗口控制，包括最小化、最大化/还原、关闭和开发者工具入口。
 - 已完成缩放锁定逻辑，包括禁用触控板捏合缩放、锁定缩放比例、拦截 `Ctrl/Cmd + +/-/0` 快捷键和关闭默认菜单。
-- 已完成最小 React 前台界面，用于展示后续 Main、Preload、Renderer 三层职责。
+- 已集成 3DGS PLY 转 3D Tiles 基础转换工具，支持选择本地 `.ply` 文件并在主进程调用 Node.js 转换库生成 `tileset.json`。
+- 已完成转换工具的 Main 服务、IPC 桥接和 React 前台表单拆分，方便后续按同样结构继续接入更多数据处理工具。
 - 已验证通过 `pnpm typecheck`、`pnpm lint` 和 `pnpm build`。
 
 ## 技术栈说明
@@ -28,6 +29,7 @@
 - ESLint：基础代码质量检查。
 - electron-builder：后续用于 Windows、macOS、Linux 应用打包。
 - pnpm：依赖管理工具，已配置 pnpm 11 的构建脚本审批项。
+- 3DGS-PLY-3DTiles-Converter：首个接入的数据处理库，用于将 Gaussian Splatting PLY 转为 3D Tiles。
 
 ## 目录结构
 
@@ -35,8 +37,10 @@
 src/main             Electron 主进程代码
 src/main/preload.cts 预加载脚本，负责安全暴露 IPC 能力
 src/main/ipc         主进程 IPC 模块
+src/main/tools       主进程数据处理工具封装
 src/main/utils       主进程工具函数，包括路径、安全和缩放控制
 src/renderer         React 渲染进程代码
+src/renderer/features 渲染进程业务功能模块
 resources            后续放置图标、示例资源等静态文件
 ```
 
@@ -64,6 +68,9 @@ pnpm build
 
 - `pnpm build:app` 会先执行完整前后端构建，再通过 `electron-builder` 生成 Windows x64 便携版程序。
 - 当前 `package.json` 使用 `pnpm.overrides` 将 `@electron/get` 固定到 `3.1.0`。这是为了避免 `electron-builder 26.15.x` 的内部依赖落到缺少 `ElectronDownloadCacheMode` 的 `@electron/get 3.0.0`，导致打包时报 `Cannot read properties of undefined (reading 'ReadWrite')`。
+- Windows 打包配置使用本地 `node_modules/electron/dist` 作为 `electronDist`，避免打包阶段重复从 GitHub 下载 Electron zip。
+- `scripts/run-electron-builder.mjs` 会为打包阶段设置 Electron 和 electron-builder 二进制镜像，减少国内网络访问 GitHub release 超时的问题。
+- 使用本地 `electronDist` 时，`scripts/cleanup-electron-dist.cjs` 会在打包过程中移除 Electron 默认模板文件，避免 `default_app.asar` 混入最终产物。
 
 ## 后续开发建议
 

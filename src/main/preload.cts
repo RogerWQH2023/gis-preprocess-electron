@@ -7,10 +7,48 @@ const CHANNELS = {
   openDevTools: "window:open-devtools",
   isMaximized: "window:is-maximized",
   maximizedChange: "window:maximized-change",
+  selectThreeDgsPlyFile: "three-dgs-tiles:select-ply-file",
+  selectThreeDgsOutputDirectory: "three-dgs-tiles:select-output-directory",
+  convertThreeDgsTiles: "three-dgs-tiles:convert",
+  threeDgsConversionLog: "three-dgs-tiles:conversion-log",
+  revealThreeDgsOutputDirectory: "three-dgs-tiles:reveal-output-directory",
 } as const;
 
 type RemoveListener = () => void;
 type MaximizedChangeCallback = (isMaximized: boolean) => void;
+type ThreeDgsInputConvention = "graphdeco" | "khr_native";
+type ThreeDgsConversionLogLevel = "info" | "success" | "warning" | "error";
+type ThreeDgsSelectPlyFileResult =
+  | { canceled: true }
+  | { canceled: false; path: string; name: string };
+type ThreeDgsSelectOutputDirectoryResult =
+  | { canceled: true }
+  | { canceled: false; path: string };
+type ThreeDgsConvertRequest = {
+  taskId: string;
+  inputPath: string;
+  outputParentDir: string;
+  options: {
+    inputConvention: ThreeDgsInputConvention;
+    memoryBudgetGb: number;
+  };
+};
+type ThreeDgsConvertResult = {
+  taskId: string;
+  inputPath: string;
+  outputDir: string;
+  tilesetPath: string;
+  summaryPath: string;
+  splatCount: number;
+  shDegree: number;
+};
+type ThreeDgsConversionLog = {
+  taskId: string;
+  level: ThreeDgsConversionLogLevel;
+  message: string;
+  createdAt: string;
+};
+type ThreeDgsConversionLogCallback = (log: ThreeDgsConversionLog) => void;
 
 const electronAPI = {
   runtime: {
@@ -40,10 +78,51 @@ const electronAPI = {
       };
     },
   },
+  tools: {
+    threeDgsTiles: {
+      selectPlyFile: () =>
+        ipcRenderer.invoke(
+          CHANNELS.selectThreeDgsPlyFile
+        ) as Promise<ThreeDgsSelectPlyFileResult>,
+      selectOutputDirectory: () =>
+        ipcRenderer.invoke(
+          CHANNELS.selectThreeDgsOutputDirectory
+        ) as Promise<ThreeDgsSelectOutputDirectoryResult>,
+      convert: (request: ThreeDgsConvertRequest) =>
+        ipcRenderer.invoke(
+          CHANNELS.convertThreeDgsTiles,
+          request
+        ) as Promise<ThreeDgsConvertResult>,
+      revealOutputDirectory: (outputDir: string) =>
+        ipcRenderer.invoke(
+          CHANNELS.revealThreeDgsOutputDirectory,
+          outputDir
+        ) as Promise<void>,
+      onConversionLog: (
+        callback: ThreeDgsConversionLogCallback
+      ): RemoveListener => {
+        const listener = (
+          _event: Electron.IpcRendererEvent,
+          value: ThreeDgsConversionLog
+        ) => {
+          callback(value);
+        };
+
+        ipcRenderer.on(CHANNELS.threeDgsConversionLog, listener);
+
+        // 转换日志可能持续较久，组件卸载时必须移除监听，避免重复追加日志。
+        return () => {
+          ipcRenderer.removeListener(
+            CHANNELS.threeDgsConversionLog,
+            listener
+          );
+        };
+      },
+    },
+  },
 } as const;
 
 // 只暴露受控 API，不把 ipcRenderer 或 Node.js 对象直接交给渲染进程。
 contextBridge.exposeInMainWorld("electronAPI", electronAPI);
 
 export type ElectronAPI = typeof electronAPI;
-

@@ -2,6 +2,7 @@
   "appId": "cn.edu.gis.preprocess",
   "productName": "GIS Data Preprocess Teaching",
   "electronDist": "node_modules/electron/dist",
+  "afterExtract": "scripts/cleanup-electron-dist.cjs",
   "files": [
     "dist/main/**/*",
     "dist/renderer/**/*",

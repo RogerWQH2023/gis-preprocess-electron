@@ -1,6 +1,10 @@
 import { app, BrowserWindow, Menu } from "electron";
 
-import { bindWindowStateEvents, registerWindowIpc } from "./ipc/window.js";
+import {
+  bindWindowStateEvents,
+  registerThreeDgsTilesIpc,
+  registerWindowIpc,
+} from "./ipc/index.js";
 import {
   applyWindowSecurity,
   getPreloadPath,
@@ -81,6 +85,7 @@ async function bootstrap(): Promise<void> {
   Menu.setApplicationMenu(null);
 
   registerWindowIpc(() => mainWindow);
+  registerThreeDgsTilesIpc(() => mainWindow);
   mainWindow = createMainWindow();
 
   app.on("activate", () => {
