@@ -1,6 +1,9 @@
 import { useEffect, useState, type ComponentType } from "react";
 
+import { CesiumIonAuthProvider } from "./cesiumIonAuth";
+import { CesiumIonAuthStatus } from "./components/CesiumIonAuthStatus";
 import { WindowControls } from "./components/WindowControls";
+import { ControlPointSearchPage } from "./pages/data-conversion/control-point-search";
 import { PlyTo3dTilesPage } from "./pages/data-conversion/ply-to-3dtiles";
 import { ThreeDgsTilesGeoreferencePage } from "./pages/data-conversion/tiles-georeference";
 import { TiffToCogTiffPage } from "./pages/data-conversion/tiff-to-cogtiff";
@@ -11,6 +14,7 @@ import { ThreeDgsTilesTestPage } from "./pages/display-tests/three-dgs-3dtiles";
 type PageId =
   | "ply-to-3dtiles"
   | "tiles-georeference"
+  | "control-point-search"
   | "tiff-to-cogtiff"
   | "three-dgs-3dtiles-test"
   | "oblique-photogrammetry-test"
@@ -47,6 +51,14 @@ const pageRegistry: Record<PageId, NavigationPage> = {
     badge: "Renderer 计算器",
     navMark: "配",
     component: ThreeDgsTilesGeoreferencePage,
+  },
+  "control-point-search": {
+    id: "control-point-search",
+    title: "控制点寻找",
+    eyebrow: "数据转换工作台",
+    badge: "Cesium 基础环境",
+    navMark: "点",
+    component: ControlPointSearchPage,
   },
   "tiff-to-cogtiff": {
     id: "tiff-to-cogtiff",
@@ -86,7 +98,12 @@ const pageRegistry: Record<PageId, NavigationPage> = {
 const navigationGroups: NavigationGroup[] = [
   {
     title: "数据转换工作台",
-    items: ["ply-to-3dtiles", "tiles-georeference", "tiff-to-cogtiff"],
+    items: [
+      "ply-to-3dtiles",
+      "tiles-georeference",
+      "control-point-search",
+      "tiff-to-cogtiff",
+    ],
   },
   {
     title: "数据显示效果测试",
@@ -115,7 +132,8 @@ export default function App() {
   }, []);
 
   return (
-    <div className="app-shell">
+    <CesiumIonAuthProvider>
+      <div className="app-shell">
       <header className="app-titlebar">
         <div className="app-titlebar__brand">
           <span className="app-titlebar__mark" aria-hidden="true" />
@@ -159,6 +177,8 @@ export default function App() {
               </section>
             ))}
           </nav>
+
+          <CesiumIonAuthStatus />
         </aside>
 
         <main className="workspace">
@@ -173,6 +193,7 @@ export default function App() {
           <ActivePage />
         </main>
       </div>
-    </div>
+      </div>
+    </CesiumIonAuthProvider>
   );
 }
