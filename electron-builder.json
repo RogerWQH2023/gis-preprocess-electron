@@ -1,0 +1,25 @@
+{
+  "appId": "cn.edu.gis.preprocess",
+  "productName": "GIS Data Preprocess Teaching",
+  "electronDist": "node_modules/electron/dist",
+  "files": [
+    "dist/main/**/*",
+    "dist/renderer/**/*",
+    "package.json"
+  ],
+  "directories": {
+    "output": "dist/app"
+  },
+  "win": {
+    "target": [
+      "portable"
+    ]
+  },
+  "mac": {
+    "target": "dmg"
+  },
+  "linux": {
+    "target": "AppImage",
+    "category": "Education"
+  }
+}
