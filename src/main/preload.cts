@@ -13,6 +13,7 @@ const CHANNELS = {
   threeDgsConversionLog: "three-dgs-tiles:conversion-log",
   revealThreeDgsOutputDirectory: "three-dgs-tiles:reveal-output-directory",
   selectThreeDgsTileset: "three-dgs-tiles-preview:select-tileset",
+  selectCogTiff: "cogtiff-preview:select-cogtiff",
 } as const;
 
 type RemoveListener = () => void;
@@ -28,6 +29,15 @@ type ThreeDgsSelectOutputDirectoryResult =
 type ThreeDgsSelectTilesetResult =
   | { canceled: true }
   | { canceled: false; path: string; name: string; url: string };
+type CogTiffSelectFileResult =
+  | { canceled: true }
+  | {
+      canceled: false;
+      path: string;
+      name: string;
+      url: string;
+      sizeBytes: number;
+    };
 type ThreeDgsConvertRequest = {
   taskId: string;
   inputPath: string;
@@ -126,6 +136,12 @@ const electronAPI = {
           );
         };
       },
+    },
+    cogTiff: {
+      selectFile: () =>
+        ipcRenderer.invoke(
+          CHANNELS.selectCogTiff
+        ) as Promise<CogTiffSelectFileResult>,
     },
   },
 } as const;

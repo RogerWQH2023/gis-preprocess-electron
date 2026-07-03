@@ -1,4 +1,7 @@
 :root {
+  --workspace-page-max-width: 1680px;
+  --workspace-cesium-height: clamp(820px, calc(100vh - 132px), 960px);
+
   color: #172033;
   background: #f4f7fb;
   font-family:
@@ -319,6 +322,9 @@ button {
   align-items: end;
   justify-content: space-between;
   gap: 16px;
+  width: min(100%, var(--workspace-page-max-width));
+  box-sizing: border-box;
+  margin-inline: auto;
 }
 
 .workspace__eyebrow,
@@ -355,15 +361,15 @@ button {
 
 .converter-panel,
 .placeholder-panel {
-  max-width: 1080px;
+  width: min(100%, var(--workspace-page-max-width));
+  max-width: var(--workspace-page-max-width);
+  box-sizing: border-box;
+  margin-inline: auto;
 }
 
 .converter-panel--wide,
 .placeholder-panel--wide {
-  width: min(100%, 1440px);
-  max-width: 1440px;
-  box-sizing: border-box;
-  margin-inline: auto;
+  max-width: var(--workspace-page-max-width);
 }
 
 .converter-panel {
@@ -848,15 +854,16 @@ button {
 
 .cesium-test-page {
   min-width: 0;
-  width: min(100%, 1440px);
-  max-width: 1440px;
-  min-height: min(760px, calc(100vh - 168px));
+  width: min(100%, var(--workspace-page-max-width));
+  height: var(--workspace-cesium-height);
+  max-width: var(--workspace-page-max-width);
   margin-inline: auto;
 }
 
 .cesium-stage {
   position: relative;
-  min-height: min(760px, calc(100vh - 168px));
+  height: 100%;
+  min-height: 0;
   overflow: hidden;
   border: 1px solid #d8e0ec;
   border-radius: 8px;

@@ -2,7 +2,8 @@ import { app, BrowserWindow, Menu } from "electron";
 
 import {
   bindWindowStateEvents,
-  registerLocalTilesProtocolScheme,
+  registerCogTiffPreviewIpc,
+  registerLocalPreviewProtocolSchemes,
   registerThreeDgsTilesIpc,
   registerThreeDgsTilesPreviewIpc,
   registerWindowIpc,
@@ -18,7 +19,7 @@ import {
 
 // 需要在 app ready 之前关闭 Chromium 的触控板捏合缩放。
 app.commandLine.appendSwitch("disable-pinch");
-registerLocalTilesProtocolScheme();
+registerLocalPreviewProtocolSchemes();
 
 let mainWindow: BrowserWindow | null = null;
 
@@ -88,6 +89,7 @@ async function bootstrap(): Promise<void> {
   Menu.setApplicationMenu(null);
 
   registerWindowIpc(() => mainWindow);
+  registerCogTiffPreviewIpc(() => mainWindow);
   registerThreeDgsTilesIpc(() => mainWindow);
   registerThreeDgsTilesPreviewIpc(() => mainWindow);
   mainWindow = createMainWindow();

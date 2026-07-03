@@ -15,6 +15,16 @@ type ThreeDgsSelectTilesetResult =
   | { canceled: true }
   | { canceled: false; path: string; name: string; url: string };
 
+type CogTiffSelectFileResult =
+  | { canceled: true }
+  | {
+      canceled: false;
+      path: string;
+      name: string;
+      url: string;
+      sizeBytes: number;
+    };
+
 type ThreeDgsConvertRequest = {
   taskId: string;
   inputPath: string;
@@ -71,6 +81,9 @@ declare global {
           onConversionLog: (
             callback: (log: ThreeDgsConversionLog) => void
           ) => () => void;
+        };
+        cogTiff: {
+          selectFile: () => Promise<CogTiffSelectFileResult>;
         };
       };
     };

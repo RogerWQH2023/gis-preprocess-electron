@@ -1,9 +1,8 @@
 .control-point-search {
   min-width: 0;
-  width: min(100%, 1440px);
-  height: min(760px, calc(100vh - 168px));
-  max-width: 1440px;
-  max-height: 760px;
+  width: min(100%, var(--workspace-page-max-width));
+  height: var(--workspace-cesium-height);
+  max-width: var(--workspace-page-max-width);
   margin-inline: auto;
 }
 

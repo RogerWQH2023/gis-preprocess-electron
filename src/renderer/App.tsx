@@ -88,7 +88,7 @@ const pageRegistry: Record<PageId, NavigationPage> = {
     id: "cogtiff-test",
     title: "COGTiff测试",
     eyebrow: "数据显示效果测试",
-    badge: "预留页面",
+    badge: "TIFFImageryProvider",
     navMark: "COG",
     component: CogTiffTestPage,
   },

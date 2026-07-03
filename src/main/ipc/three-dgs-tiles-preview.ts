@@ -9,7 +9,7 @@ import type {
   OpenDialogReturnValue,
 } from "electron";
 
-const LOCAL_TILES_SCHEME = "gis-tiles";
+export const LOCAL_TILES_SCHEME = "gis-tiles";
 
 const CHANNELS = {
   selectTileset: "three-dgs-tiles-preview:select-tileset",
@@ -29,21 +29,6 @@ type SelectTilesetResult =
 const tilesetRoots = new Map<string, string>();
 let hasRegisteredPreviewIpc = false;
 let hasHandledLocalTilesProtocol = false;
-
-export function registerLocalTilesProtocolScheme(): void {
-  protocol.registerSchemesAsPrivileged([
-    {
-      scheme: LOCAL_TILES_SCHEME,
-      privileges: {
-        standard: true,
-        secure: true,
-        supportFetchAPI: true,
-        corsEnabled: true,
-        stream: true,
-      },
-    },
-  ]);
-}
 
 function resolveWindow(
   event: IpcMainInvokeEvent,
