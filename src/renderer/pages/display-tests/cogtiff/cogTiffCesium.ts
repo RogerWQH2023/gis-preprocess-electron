@@ -7,6 +7,7 @@ import {
 import {
   fromUrl,
   type GeoTIFF,
+  type GeoTIFFImage,
   type RemoteSourceOptions,
   type TypedArrayArrayWithDimensions,
 } from "geotiff";
@@ -43,10 +44,16 @@ export type CogTiffRenderConfig = {
   blueBand: number;
 };
 
+export type CogTiffBandStats = {
+  min: number;
+  max: number;
+};
+
 export type CogTiffMetadata = {
   width: number;
   height: number;
   bandCount: number;
+  bandStats: Record<number, CogTiffBandStats>;
   tileWidth: number;
   tileHeight: number;
   bbox: [number, number, number, number] | null;
@@ -101,6 +108,34 @@ function normalizeBand(value: number, bandCount?: number): number {
   return clamp(Math.round(value), 1, maxBand);
 }
 
+function ensureUsableStats(stats: CogTiffBandStats): CogTiffBandStats {
+  if (stats.min === stats.max) {
+    return {
+      min: stats.min,
+      max: stats.max + 1,
+    };
+  }
+
+  return stats;
+}
+
+function readBandStatsFromGdal(
+  value: Record<string, unknown> | null
+): CogTiffBandStats | null {
+  const minValue = value?.STATISTICS_MINIMUM;
+  const maxValue = value?.STATISTICS_MAXIMUM;
+  const min =
+    typeof minValue === "number" ? minValue : Number.parseFloat(String(minValue));
+  const max =
+    typeof maxValue === "number" ? maxValue : Number.parseFloat(String(maxValue));
+
+  if (!Number.isFinite(min) || !Number.isFinite(max)) {
+    return null;
+  }
+
+  return ensureUsableStats({ min, max });
+}
+
 function readEpsgCode(geoKeys: Record<string, unknown> | null): number | null {
   const projectedCode = geoKeys?.ProjectedCSTypeGeoKey;
   const geographicCode = geoKeys?.GeographicTypeGeoKey;
@@ -135,6 +170,87 @@ function openCogTiff(url: string): Promise<GeoTIFF> {
   const request = fromUrl(url, COG_REQUEST_OPTIONS);
   cogTiffCache.set(url, request);
   return request;
+}
+
+async function estimateBandStatsFromOverview(
+  tiff: GeoTIFF,
+  bandCount: number,
+  noData: number | null
+): Promise<Record<number, CogTiffBandStats>> {
+  try {
+    const imageCount = await tiff.getImageCount();
+    const overviewImage = await tiff.getImage(Math.max(imageCount - 1, 0));
+    const rasters = (await overviewImage.readRasters({
+      interleave: false,
+    })) as TypedArrayArrayWithDimensions;
+    const stats: Record<number, CogTiffBandStats> = {};
+
+    Array.from({ length: bandCount }, (_, index) => {
+      const values = rasters[index];
+      let min = Number.POSITIVE_INFINITY;
+      let max = Number.NEGATIVE_INFINITY;
+
+      if (!values) {
+        return;
+      }
+
+      for (const value of values) {
+        if (
+          !Number.isFinite(value) ||
+          (noData !== null && Object.is(value, noData))
+        ) {
+          continue;
+        }
+
+        min = Math.min(min, value);
+        max = Math.max(max, value);
+      }
+
+      if (Number.isFinite(min) && Number.isFinite(max)) {
+        stats[index + 1] = ensureUsableStats({ min, max });
+      }
+    });
+
+    return stats;
+  } catch {
+    return {};
+  }
+}
+
+async function readBandStats(
+  tiff: GeoTIFF,
+  image: GeoTIFFImage,
+  bandCount: number,
+  noData: number | null
+): Promise<Record<number, CogTiffBandStats>> {
+  const metadataStatsEntries = await Promise.all(
+    Array.from({ length: bandCount }, async (_, index) => {
+      const stats = readBandStatsFromGdal(
+        (await image.getGDALMetadata(index)) as Record<string, unknown> | null
+      );
+
+      return [index + 1, stats] as const;
+    })
+  );
+  const metadataStats: Record<number, CogTiffBandStats> = {};
+  const missingBands: number[] = [];
+
+  metadataStatsEntries.forEach(([band, stats]) => {
+    if (stats) {
+      metadataStats[band] = stats;
+    } else {
+      missingBands.push(band);
+    }
+  });
+
+  if (missingBands.length === 0) {
+    return metadataStats;
+  }
+
+  return {
+    ...(await estimateBandStatsFromOverview(tiff, bandCount, noData)),
+    ...metadataStats,
+  };
 }
 
 function lonLatToSourceCoordinate(
@@ -226,13 +342,20 @@ function createSingleBandOptions(
 
 function createRgbOptions(
   config: CogTiffRenderConfig,
-  bandCount?: number
+  metadata?: Pick<CogTiffMetadata, "bandCount" | "bandStats">
 ): TIFFImageryProviderRenderOptions {
+  const redBand = normalizeBand(config.redBand, metadata?.bandCount);
+  const greenBand = normalizeBand(config.greenBand, metadata?.bandCount);
+  const blueBand = normalizeBand(config.blueBand, metadata?.bandCount);
+  const redStats = metadata?.bandStats[redBand];
+  const greenStats = metadata?.bandStats[greenBand];
+  const blueStats = metadata?.bandStats[blueBand];
+
   return {
     multi: {
-      r: { band: normalizeBand(config.redBand, bandCount) },
-      g: { band: normalizeBand(config.greenBand, bandCount) },
-      b: { band: normalizeBand(config.blueBand, bandCount) },
+      r: { band: redBand, min: redStats?.min, max: redStats?.max },
+      g: { band: greenBand, min: greenStats?.min, max: greenStats?.max },
+      b: { band: blueBand, min: blueStats?.min, max: blueStats?.max },
     },
     resampleMethod: "nearest",
   };
@@ -240,11 +363,11 @@ function createRgbOptions(
 
 export function createCogTiffRenderOptions(
   config: CogTiffRenderConfig,
-  bandCount?: number
+  metadata?: Pick<CogTiffMetadata, "bandCount" | "bandStats">
 ): TIFFImageryProviderRenderOptions {
   return config.mode === "single"
-    ? createSingleBandOptions(config, bandCount)
-    : createRgbOptions(config, bandCount);
+    ? createSingleBandOptions(config, metadata?.bandCount)
+    : createRgbOptions(config, metadata);
 }
 
 export async function readCogTiffMetadata(
@@ -259,16 +382,19 @@ export async function readCogTiffMetadata(
   const request = openCogTiff(url).then(async (tiff) => {
     const image = await tiff.getImage();
     const geoKeys = image.getGeoKeys() as Record<string, unknown> | null;
+    const bandCount = image.getSamplesPerPixel();
+    const noData = image.getGDALNoData();
 
     return {
       width: image.getWidth(),
       height: image.getHeight(),
-      bandCount: image.getSamplesPerPixel(),
+      bandCount,
+      bandStats: await readBandStats(tiff, image, bandCount, noData),
       tileWidth: image.getTileWidth(),
       tileHeight: image.getTileHeight(),
       bbox: readBoundingBox(image),
       epsgCode: readEpsgCode(geoKeys),
-      noData: image.getGDALNoData(),
+      noData,
     };
   });
 
@@ -280,24 +406,24 @@ export async function loadCogTiffLayer(
   viewer: Viewer,
   url: string,
   config: CogTiffRenderConfig,
-  bandCount?: number
+  metadata?: CogTiffMetadata
 ): Promise<CogTiffLoadedLayer> {
   // 普通 Web 环境不需要 Electron：把文件放入 public/cog/demo.tif 后，url 传 "/cog/demo.tif" 即可。
   // Electron 环境中，本页 url 来自主进程注册的 gis-cogtiff:// 协议，文件字节仍由 Main 进程读取。
   const provider = await TIFFImageryProvider.fromUrl(url, {
     enablePickFeatures: true,
     requestOptions: COG_REQUEST_OPTIONS,
-    renderOptions: createCogTiffRenderOptions(config, bandCount),
+    renderOptions: createCogTiffRenderOptions(config, metadata),
   });
   const layer = viewer.imageryLayers.addImageryProvider(
     provider as unknown as ImageryProvider
   );
-  const metadata = await readCogTiffMetadata(url);
+  const loadedMetadata = metadata ?? (await readCogTiffMetadata(url));
 
   return {
     layer,
     provider,
-    metadata,
+    metadata: loadedMetadata,
   };
 }
 

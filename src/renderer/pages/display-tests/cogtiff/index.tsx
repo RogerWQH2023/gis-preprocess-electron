@@ -93,6 +93,30 @@ function normalizeRenderConfig(
   };
 }
 
+function validateRenderConfig(
+  config: CogTiffRenderConfig,
+  metadata: CogTiffMetadata
+): void {
+  if (config.mode !== "rgb") {
+    return;
+  }
+
+  if (metadata.bandCount < 3) {
+    throw new Error(
+      `当前 COGTiff 只有 ${metadata.bandCount} 个波段，RGB 渲染需要至少 3 个波段。请使用单波段渲染。`
+    );
+  }
+
+  const selectedBands = [config.redBand, config.greenBand, config.blueBand];
+  const uniqueBandCount = new Set(selectedBands).size;
+
+  if (uniqueBandCount !== selectedBands.length) {
+    throw new Error(
+      "TIFFImageryProvider 的 RGB 渲染不支持重复通道，请为 R、G、B 选择 3 个不同波段。"
+    );
+  }
+}
+
 function readNumberInput(value: string, fallback: number): number {
   const parsed = Number(value);
 
@@ -334,6 +358,7 @@ export function CogTiffTestPage() {
     const metadata = await readCogTiffMetadata(selection.url);
     const safeConfig = normalizeRenderConfig(config, metadata.bandCount);
 
+    validateRenderConfig(safeConfig, metadata);
     setRenderConfig(safeConfig);
 
     if (layerRef.current) {
@@ -345,7 +370,7 @@ export function CogTiffTestPage() {
       viewer,
       selection.url,
       safeConfig,
-      metadata.bandCount
+      metadata
     );
 
     layerRef.current = loaded.layer;
@@ -443,6 +468,7 @@ export function CogTiffTestPage() {
 
   const bandCount = loadedCogTiff?.metadata.bandCount;
   const isBusy = status === "loading";
+  const isRgbUnavailable = bandCount !== undefined && bandCount < 3;
 
   return (
     <section className="cesium-test-page" aria-labelledby="cogtiff-test-title">
@@ -510,7 +536,7 @@ export function CogTiffTestPage() {
                   type="button"
                   aria-pressed={renderConfig.mode === "rgb"}
                   onClick={() => updateRenderMode("rgb")}
-                  disabled={isBusy}
+                  disabled={isBusy || isRgbUnavailable}
                 >
                   多波段 RGB
                 </button>
