@@ -2,10 +2,13 @@ import type { Cartesian3 } from "cesium";
 
 export type LoadStatus = "idle" | "loading" | "loaded" | "error";
 
+export type TilesetTransformMode = "use" | "ignore";
+
 export type LoadedTilesetInfo = {
   name: string;
   path: string;
   url: string;
+  transformMode: TilesetTransformMode;
 };
 
 export type LocalVector3 = {

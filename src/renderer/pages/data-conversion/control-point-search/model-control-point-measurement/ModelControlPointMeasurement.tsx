@@ -8,7 +8,6 @@ import {
 } from "react";
 import {
   Cesium3DTileset,
-  Matrix4,
   ScreenSpaceEventHandler,
   ScreenSpaceEventType,
 } from "cesium";
@@ -39,6 +38,11 @@ import {
   shouldIgnoreKeyboardEvent,
   zoomLocalCamera,
 } from "./localCameraNavigation";
+import {
+  applyTilesetTransformMode,
+  transformModeCoordinateText,
+  transformModeText,
+} from "./tilesetTransformMode";
 
 import type { Viewer as CesiumViewer } from "cesium";
 import type {
@@ -46,6 +50,7 @@ import type {
   LoadedTilesetInfo,
   LoadStatus,
   LocalCameraNavigation,
+  TilesetTransformMode,
 } from "./types";
 
 type ModelControlPointMeasurementProps = {
@@ -68,6 +73,8 @@ export function ModelControlPointMeasurement({
   const previewApi = window.electronAPI?.tools.threeDgsTiles ?? null;
 
   const [tilesetUrl, setTilesetUrl] = useState("");
+  const [transformMode, setTransformMode] =
+    useState<TilesetTransformMode>("ignore");
   const [status, setStatus] = useState<LoadStatus>("idle");
   const [loadedTileset, setLoadedTileset] = useState<LoadedTilesetInfo | null>(
     null,
@@ -92,6 +99,7 @@ export function ModelControlPointMeasurement({
     () => controlPoints.filter((point) => point.local).length,
     [controlPoints],
   );
+  const activeTransformMode = loadedTileset?.transformMode ?? transformMode;
 
   useEffect(() => {
     activeControlPointIdRef.current = activeControlPointId;
@@ -265,6 +273,7 @@ export function ModelControlPointMeasurement({
   async function loadTileset(
     url: string,
     info?: Partial<LoadedTilesetInfo>,
+    selectedTransformMode: TilesetTransformMode = transformMode,
   ): Promise<void> {
     const viewer = viewerRef.current;
     const trimmedUrl = url.trim();
@@ -295,7 +304,7 @@ export function ModelControlPointMeasurement({
         skipLevelOfDetail: false,
       });
 
-      tileset.modelMatrix = Matrix4.clone(Matrix4.IDENTITY);
+      applyTilesetTransformMode(tileset, selectedTransformMode);
       viewer.scene.primitives.add(tileset);
       tilesetRef.current = tileset;
 
@@ -307,9 +316,14 @@ export function ModelControlPointMeasurement({
         name: info?.name ?? "tileset.json",
         path: info?.path ?? trimmedUrl,
         url: info?.url ?? trimmedUrl,
+        transformMode: selectedTransformMode,
       });
       setStatus("loaded");
-      setMessage("模型已加载，控制点坐标将按模型局部 XYZ 输出。");
+      setMessage(
+        selectedTransformMode === "ignore"
+          ? "模型已加载，已临时忽略 tileset.json 的 root.transform，控制点输出原始模型 XYZ。"
+          : "模型已加载，已使用 tileset.json 的 root.transform，控制点输出应用 Transform 后的场景 XYZ。",
+      );
     } catch (error) {
       setStatus("error");
       setLoadedTileset(null);
@@ -334,12 +348,12 @@ export function ModelControlPointMeasurement({
       name: selection.name,
       path: selection.path,
       url: selection.url,
-    });
+    }, transformMode);
   }
 
   function handleUrlSubmit(event: FormEvent<HTMLFormElement>): void {
     event.preventDefault();
-    void loadTileset(tilesetUrl);
+    void loadTileset(tilesetUrl, undefined, transformMode);
   }
 
   function handleResetView(): void {
@@ -546,6 +560,17 @@ export function ModelControlPointMeasurement({
         >
           选择 tileset
         </button>
+        <label className="control-point-search__transform-toggle">
+          <input
+            checked={transformMode === "use"}
+            disabled={status === "loading"}
+            onChange={(event) =>
+              setTransformMode(event.target.checked ? "use" : "ignore")
+            }
+            type="checkbox"
+          />
+          <span>加载 Transform</span>
+        </label>
         <button
           className="primary-button"
           type="submit"
@@ -602,6 +627,10 @@ export function ModelControlPointMeasurement({
                 <dd>
                   {exportableCount} / {controlPoints.length}
                 </dd>
+              </div>
+              <div>
+                <dt>Transform</dt>
+                <dd>{transformModeText[loadedTileset.transformMode]}</dd>
               </div>
             </dl>
           ) : null}
@@ -747,7 +776,8 @@ export function ModelControlPointMeasurement({
       <footer className="control-point-search__status">
         <span>{message}</span>
         <span>
-          坐标模式：local XYZ · 已加载控制点 {controlPoints.length} · 已计算{" "}
+          坐标模式：{transformModeCoordinateText[activeTransformMode]} · 已加载控制点{" "}
+          {controlPoints.length} · 已计算{" "}
           {exportableCount}
         </span>
       </footer>

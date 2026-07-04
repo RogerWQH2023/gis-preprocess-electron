@@ -75,7 +75,7 @@
 
 .control-point-search__load-row {
   display: grid;
-  grid-template-columns: minmax(240px, 1fr) repeat(5, auto);
+  grid-template-columns: minmax(240px, 1fr) repeat(6, auto);
   gap: 10px;
   align-items: center;
   padding: 12px 16px;
@@ -107,6 +107,28 @@
   color: #1d2738;
   font: inherit;
   font-size: 13px;
+}
+
+.control-point-search__transform-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 38px;
+  padding: 0 10px;
+  border: 1px solid #cfd8e7;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #344054;
+  font-size: 13px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.control-point-search__transform-toggle input {
+  width: 15px;
+  height: 15px;
+  margin: 0;
 }
 
 .control-point-search__main {
