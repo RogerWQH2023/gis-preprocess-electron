@@ -43,7 +43,7 @@ function setDefaultView(viewer: CesiumViewer): void {
   });
 }
 
-export function ThreeDgsTilesTestPage() {
+export function ThreeDTilesTestPage() {
   const { token, hasToken } = useCesiumIonAuth();
   const containerRef = useRef<HTMLDivElement | null>(null);
   const viewerRef = useRef<CesiumViewer | null>(null);
@@ -146,7 +146,7 @@ export function ThreeDgsTilesTestPage() {
   return (
     <section
       className="cesium-test-page"
-      aria-labelledby="three-dgs-test-title"
+      aria-labelledby="tiles-test-title"
     >
       <div className="cesium-stage">
         <div className="cesium-stage__viewer" ref={containerRef} />
@@ -154,7 +154,7 @@ export function ThreeDgsTilesTestPage() {
           <div className="cesium-stage__panel-header">
             <div>
               <p className="workspace__eyebrow">Cesium 1.143.0</p>
-              <h2 id="three-dgs-test-title">3DGS 3D Tiles 预览</h2>
+              <h2 id="tiles-test-title">3D Tiles 预览</h2>
             </div>
             <span
               className={`status-pill status-pill--${statusPillClass[status]}`}

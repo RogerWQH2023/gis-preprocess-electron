@@ -9,8 +9,7 @@ import { PlyTo3dTilesPage } from "./pages/data-conversion/ply-to-3dtiles";
 import { ThreeDgsTilesGeoreferencePage } from "./pages/data-conversion/tiles-georeference";
 import { TiffToCogTiffPage } from "./pages/data-conversion/tiff-to-cogtiff";
 import { CogTiffTestPage } from "./pages/display-tests/cogtiff";
-import { ObliquePhotogrammetryTestPage } from "./pages/display-tests/oblique-photogrammetry";
-import { ThreeDgsTilesTestPage } from "./pages/display-tests/three-dgs-3dtiles";
+import { ThreeDTilesTestPage } from "./pages/display-tests/3dtiles";
 
 type PageId =
   | "ply-to-3dtiles"
@@ -18,8 +17,7 @@ type PageId =
   | "tiles-georeference"
   | "control-point-search"
   | "tiff-to-cogtiff"
-  | "three-dgs-3dtiles-test"
-  | "oblique-photogrammetry-test"
+  | "3dtiles-test"
   | "cogtiff-test";
 
 interface NavigationPage {
@@ -78,21 +76,13 @@ const pageRegistry: Record<PageId, NavigationPage> = {
     navMark: "栅",
     component: TiffToCogTiffPage,
   },
-  "three-dgs-3dtiles-test": {
-    id: "three-dgs-3dtiles-test",
-    title: "3DGS 3DTiles测试",
+  "3dtiles-test": {
+    id: "3dtiles-test",
+    title: "3D Tiles 测试",
     eyebrow: "数据显示效果测试",
     badge: "Cesium Viewer",
     navMark: "3D",
-    component: ThreeDgsTilesTestPage,
-  },
-  "oblique-photogrammetry-test": {
-    id: "oblique-photogrammetry-test",
-    title: "倾斜摄影模型测试",
-    eyebrow: "数据显示效果测试",
-    badge: "预留页面",
-    navMark: "倾",
-    component: ObliquePhotogrammetryTestPage,
+    component: ThreeDTilesTestPage,
   },
   "cogtiff-test": {
     id: "cogtiff-test",
@@ -118,11 +108,7 @@ const navigationGroups: NavigationGroup[] = [
   },
   {
     title: "数据显示效果测试",
-    items: [
-      "oblique-photogrammetry-test",
-      "three-dgs-3dtiles-test",
-      "cogtiff-test",
-    ],
+    items: ["3dtiles-test", "cogtiff-test"],
   },
 ];
 
