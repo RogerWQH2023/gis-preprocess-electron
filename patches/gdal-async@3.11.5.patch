@@ -1,0 +1,12 @@
+diff --git a/common.gypi b/common.gypi
+index bac07d1becd1450e6e47fb0e58bf02031a631ca7..54c92a47cb3035cccc8a7c5df69cb8c3c6cdd768 100644
+--- a/common.gypi
++++ b/common.gypi
+@@ -39,6 +39,7 @@
+ 				#"InlineFunctionExpansion": 0, #0:/Ob0: disable, 1:/Ob1 inline only marked funtions, 2:/Ob2 inline anything eligible
+ 				"AdditionalOptions": [
+ 					"/MP",				 # compile across multiple CPUs
++					"/bigobj",			 # Allow large GDAL translation units to avoid MSVC C1128.
+ 					"/GR",				 # force RTTI
+ 					"/EHsc",			 # same for ExceptionHandling
+ 					"/permissive-" # for the new MSVC in Github Actions, mostly related to const char to char conversions

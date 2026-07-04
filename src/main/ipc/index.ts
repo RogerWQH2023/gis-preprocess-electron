@@ -10,6 +10,7 @@ import {
 } from "./three-dgs-tiles-preview.js";
 
 export { registerCogTiffPreviewIpc, registerThreeDgsTilesPreviewIpc };
+export { registerBipToCogTiffIpc } from "./bip-to-cogtiff.js";
 export { registerThreeDgsTilesIpc } from "./three-dgs-tiles.js";
 export { bindWindowStateEvents, registerWindowIpc } from "./window.js";
 

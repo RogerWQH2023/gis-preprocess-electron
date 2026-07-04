@@ -539,6 +539,12 @@ button {
   gap: 16px;
 }
 
+.raster-option-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(150px, 1fr));
+  gap: 16px;
+}
+
 .segmented-control {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -581,6 +587,52 @@ button {
   font: inherit;
 }
 
+.text-input,
+.select-input {
+  width: 100%;
+  min-height: 38px;
+  box-sizing: border-box;
+  border: 1px solid #cfd8e7;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #1d2738;
+  font: inherit;
+}
+
+.text-input {
+  padding: 0 10px;
+}
+
+.select-input {
+  padding: 0 8px;
+}
+
+.checkbox-field {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 38px;
+  color: #344054;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.checkbox-field--standalone {
+  justify-self: start;
+}
+
+.checkbox-field input {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+}
+
+.bounds-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(130px, 1fr));
+  gap: 12px;
+}
+
 .converter-actions {
   display: flex;
   flex-wrap: wrap;
@@ -618,7 +670,10 @@ button {
 .action-button:disabled,
 .primary-button:disabled,
 .secondary-button:disabled,
-.number-input:disabled {
+.number-input:disabled,
+.text-input:disabled,
+.select-input:disabled,
+.checkbox-field input:disabled {
   cursor: default;
   opacity: 0.52;
 }
@@ -628,6 +683,10 @@ button {
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 10px;
   margin: 0;
+}
+
+.result-grid--raster {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
 .result-grid div,
@@ -983,7 +1042,10 @@ button {
 
   .path-row,
   .option-grid,
+  .raster-option-grid,
   .result-grid,
+  .result-grid--raster,
+  .bounds-grid,
   .georeference-metrics,
   .placeholder-grid {
     grid-template-columns: 1fr;

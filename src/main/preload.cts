@@ -12,6 +12,12 @@ const CHANNELS = {
   convertThreeDgsTiles: "three-dgs-tiles:convert",
   threeDgsConversionLog: "three-dgs-tiles:conversion-log",
   revealThreeDgsOutputDirectory: "three-dgs-tiles:reveal-output-directory",
+  selectBipFile: "bip-to-cogtiff:select-bip-file",
+  selectBipCogTiffOutputDirectory: "bip-to-cogtiff:select-output-directory",
+  selectBipCogTiffTempDirectory: "bip-to-cogtiff:select-temp-directory",
+  convertBipToCogTiff: "bip-to-cogtiff:convert",
+  bipToCogTiffConversionLog: "bip-to-cogtiff:conversion-log",
+  revealBipCogTiffOutputDirectory: "bip-to-cogtiff:reveal-output-directory",
   selectThreeDgsTileset: "three-dgs-tiles-preview:select-tileset",
   selectCogTiff: "cogtiff-preview:select-cogtiff",
 } as const;
@@ -63,6 +69,82 @@ type ThreeDgsConversionLog = {
   createdAt: string;
 };
 type ThreeDgsConversionLogCallback = (log: ThreeDgsConversionLog) => void;
+type BipToCogTiffCompression = "DEFLATE" | "LZW";
+type BipToCogTiffPredictor = "AUTO" | "STANDARD" | "FLOATING_POINT" | "NO";
+type BipToCogTiffBigTiff = "YES" | "IF_NEEDED" | "IF_SAFER" | "NO";
+type BipToCogTiffInterleave = "BAND" | "PIXEL";
+type BipToCogTiffConversionLogLevel =
+  | "info"
+  | "success"
+  | "warning"
+  | "error";
+type BipToCogTiffBounds = {
+  xmin: number;
+  ymax: number;
+  xmax: number;
+  ymin: number;
+};
+type BipToCogTiffSelectBipFileResult =
+  | { canceled: true }
+  | {
+      canceled: false;
+      path: string;
+      name: string;
+      defaultOutputFileName: string;
+      hdrPath: string | null;
+      hasHdr: boolean;
+    };
+type BipToCogTiffSelectDirectoryResult =
+  | { canceled: true }
+  | { canceled: false; path: string };
+type BipToCogTiffMetadata = {
+  driver: string;
+  width: number;
+  height: number;
+  bandCount: number;
+  dataType: string | null;
+  geoTransform: number[] | null;
+  srsWkt: string | null;
+  gdalVersion: string;
+};
+type BipToCogTiffConvertRequest = {
+  taskId: string;
+  inputPath: string;
+  outputDirectory: string;
+  outputFileName?: string;
+  tmpDir?: string;
+  srs?: string;
+  bounds?: BipToCogTiffBounds | null;
+  overwrite?: boolean;
+  options: {
+    compression?: BipToCogTiffCompression;
+    predictor?: BipToCogTiffPredictor;
+    blockSize?: number;
+    bigTiff?: BipToCogTiffBigTiff;
+    interleave?: BipToCogTiffInterleave;
+  };
+};
+type BipToCogTiffConvertResult = {
+  taskId: string;
+  inputPath: string;
+  outputPath: string;
+  outputDirectory: string;
+  outputFileName: string;
+  outputSizeBytes: number;
+  hdrPath: string | null;
+  hasHdr: boolean;
+  metadata: BipToCogTiffMetadata;
+  translateArgs: string[];
+};
+type BipToCogTiffConversionLog = {
+  taskId: string;
+  level: BipToCogTiffConversionLogLevel;
+  message: string;
+  createdAt: string;
+};
+type BipToCogTiffConversionLogCallback = (
+  log: BipToCogTiffConversionLog
+) => void;
 
 const electronAPI = {
   runtime: {
@@ -132,6 +214,50 @@ const electronAPI = {
         return () => {
           ipcRenderer.removeListener(
             CHANNELS.threeDgsConversionLog,
+            listener
+          );
+        };
+      },
+    },
+    bipToCogTiff: {
+      selectBipFile: () =>
+        ipcRenderer.invoke(
+          CHANNELS.selectBipFile
+        ) as Promise<BipToCogTiffSelectBipFileResult>,
+      selectOutputDirectory: () =>
+        ipcRenderer.invoke(
+          CHANNELS.selectBipCogTiffOutputDirectory
+        ) as Promise<BipToCogTiffSelectDirectoryResult>,
+      selectTempDirectory: () =>
+        ipcRenderer.invoke(
+          CHANNELS.selectBipCogTiffTempDirectory
+        ) as Promise<BipToCogTiffSelectDirectoryResult>,
+      convert: (request: BipToCogTiffConvertRequest) =>
+        ipcRenderer.invoke(
+          CHANNELS.convertBipToCogTiff,
+          request
+        ) as Promise<BipToCogTiffConvertResult>,
+      revealOutputDirectory: (outputDirectory: string) =>
+        ipcRenderer.invoke(
+          CHANNELS.revealBipCogTiffOutputDirectory,
+          outputDirectory
+        ) as Promise<void>,
+      onConversionLog: (
+        callback: BipToCogTiffConversionLogCallback
+      ): RemoveListener => {
+        const listener = (
+          _event: Electron.IpcRendererEvent,
+          value: BipToCogTiffConversionLog
+        ) => {
+          callback(value);
+        };
+
+        ipcRenderer.on(CHANNELS.bipToCogTiffConversionLog, listener);
+
+        // 转换可能处理 2GB+ 栅格，组件卸载时需要清理日志监听。
+        return () => {
+          ipcRenderer.removeListener(
+            CHANNELS.bipToCogTiffConversionLog,
             listener
           );
         };

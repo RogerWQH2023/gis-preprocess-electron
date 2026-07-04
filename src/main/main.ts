@@ -2,6 +2,7 @@ import { app, BrowserWindow, Menu } from "electron";
 
 import {
   bindWindowStateEvents,
+  registerBipToCogTiffIpc,
   registerCogTiffPreviewIpc,
   registerLocalPreviewProtocolSchemes,
   registerThreeDgsTilesIpc,
@@ -89,6 +90,7 @@ async function bootstrap(): Promise<void> {
   Menu.setApplicationMenu(null);
 
   registerWindowIpc(() => mainWindow);
+  registerBipToCogTiffIpc(() => mainWindow);
   registerCogTiffPreviewIpc(() => mainWindow);
   registerThreeDgsTilesIpc(() => mainWindow);
   registerThreeDgsTilesPreviewIpc(() => mainWindow);

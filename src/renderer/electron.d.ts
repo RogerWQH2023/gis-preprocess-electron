@@ -52,6 +52,87 @@ type ThreeDgsConversionLog = {
   createdAt: string;
 };
 
+type BipToCogTiffCompression = "DEFLATE" | "LZW";
+type BipToCogTiffPredictor = "AUTO" | "STANDARD" | "FLOATING_POINT" | "NO";
+type BipToCogTiffBigTiff = "YES" | "IF_NEEDED" | "IF_SAFER" | "NO";
+type BipToCogTiffInterleave = "BAND" | "PIXEL";
+type BipToCogTiffConversionLogLevel =
+  | "info"
+  | "success"
+  | "warning"
+  | "error";
+
+type BipToCogTiffBounds = {
+  xmin: number;
+  ymax: number;
+  xmax: number;
+  ymin: number;
+};
+
+type BipToCogTiffSelectBipFileResult =
+  | { canceled: true }
+  | {
+      canceled: false;
+      path: string;
+      name: string;
+      defaultOutputFileName: string;
+      hdrPath: string | null;
+      hasHdr: boolean;
+    };
+
+type BipToCogTiffSelectDirectoryResult =
+  | { canceled: true }
+  | { canceled: false; path: string };
+
+type BipToCogTiffMetadata = {
+  driver: string;
+  width: number;
+  height: number;
+  bandCount: number;
+  dataType: string | null;
+  geoTransform: number[] | null;
+  srsWkt: string | null;
+  gdalVersion: string;
+};
+
+type BipToCogTiffConvertRequest = {
+  taskId: string;
+  inputPath: string;
+  outputDirectory: string;
+  outputFileName?: string;
+  tmpDir?: string;
+  srs?: string;
+  bounds?: BipToCogTiffBounds | null;
+  overwrite?: boolean;
+  options: {
+    compression?: BipToCogTiffCompression;
+    predictor?: BipToCogTiffPredictor;
+    blockSize?: number;
+    bigTiff?: BipToCogTiffBigTiff;
+    interleave?: BipToCogTiffInterleave;
+  };
+};
+
+type BipToCogTiffConvertResult = {
+  taskId: string;
+  inputPath: string;
+  outputPath: string;
+  outputDirectory: string;
+  outputFileName: string;
+  outputSizeBytes: number;
+  hdrPath: string | null;
+  hasHdr: boolean;
+  metadata: BipToCogTiffMetadata;
+  translateArgs: string[];
+};
+
+type BipToCogTiffConversionLog = {
+  taskId: string;
+  level: BipToCogTiffConversionLogLevel;
+  message: string;
+  createdAt: string;
+};
+
 declare global {
   interface Window {
     electronAPI?: {
@@ -80,6 +161,18 @@ declare global {
           selectTileset: () => Promise<ThreeDgsSelectTilesetResult>;
           onConversionLog: (
             callback: (log: ThreeDgsConversionLog) => void
+          ) => () => void;
+        };
+        bipToCogTiff: {
+          selectBipFile: () => Promise<BipToCogTiffSelectBipFileResult>;
+          selectOutputDirectory: () => Promise<BipToCogTiffSelectDirectoryResult>;
+          selectTempDirectory: () => Promise<BipToCogTiffSelectDirectoryResult>;
+          convert: (
+            request: BipToCogTiffConvertRequest
+          ) => Promise<BipToCogTiffConvertResult>;
+          revealOutputDirectory: (outputDirectory: string) => Promise<void>;
+          onConversionLog: (
+            callback: (log: BipToCogTiffConversionLog) => void
           ) => () => void;
         };
         cogTiff: {

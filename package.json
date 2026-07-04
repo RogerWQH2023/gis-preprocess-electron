@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.1.0",
   "type": "module",
-  "packageManager": "pnpm@11.7.0",
+  "packageManager": "pnpm@10.32.1",
   "author": "GIS Teaching Team",
   "description": "教学用 Electron GIS 数据预处理应用基础框架",
   "main": "dist/main/main.js",
@@ -23,6 +23,7 @@
   "dependencies": {
     "3dgs-ply-3dtiles-converter": "^0.5.13",
     "cesium": "1.143.0",
+    "gdal-async": "^3.11.5",
     "geotiff": "3.0.5",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",

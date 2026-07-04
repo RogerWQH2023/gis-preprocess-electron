@@ -6,7 +6,7 @@
 
 - 搭建一个可长期扩展的 Electron + Vite + React + TypeScript 项目骨架。
 - 将渲染进程和主进程职责分离，避免前台直接暴露 Node.js 能力。
-- 为后续接入矢量、栅格、坐标转换、格式转换、裁剪、重投影等 GIS 数据预处理流程预留结构。
+- 为后续接入矢量、栅格、坐标转换、格式转换、裁剪、重投影等 GIS 数据预处理流程预留结构，主进程可调度 Node.js 库。
 - 提供适合教学使用的中文注释和 UTF-8 编码约定，降低学生阅读和二次开发成本。
 
 ## 当前进展
@@ -17,6 +17,7 @@
 - 已完成无边框窗口和基础窗口控制，包括最小化、最大化/还原、关闭和开发者工具入口。
 - 已完成缩放锁定逻辑，包括禁用触控板捏合缩放、锁定缩放比例、拦截 `Ctrl/Cmd + +/-/0` 快捷键和关闭默认菜单。
 - 已集成 3DGS PLY 转 3D Tiles 基础转换工具，支持选择本地 `.ply` 文件并在主进程调用 Node.js 转换库生成 `tileset.json`。
+- 已集成 ENVI BIP 转 COGTiff 基础转换工具，主进程负责 IPC 和任务调度，GDAL 调用在主进程启动的 Node worker 中完成。
 - 已完成转换工具的 Main 服务、IPC 桥接和 React 前台表单拆分，方便后续按同样结构继续接入更多数据处理工具。
 - 已验证通过 `pnpm typecheck`、`pnpm lint` 和 `pnpm build`。
 
@@ -28,8 +29,9 @@
 - TypeScript：统一主进程、预加载脚本和渲染进程的类型约束。
 - ESLint：基础代码质量检查。
 - electron-builder：后续用于 Windows、macOS、Linux 应用打包。
-- pnpm：统一使用 pnpm 11 作为依赖管理工具，已配置构建脚本审批项。
+- pnpm：统一使用 pnpm 10.32.1 作为依赖管理工具，已配置构建脚本审批项，并通过 `.npmrc` 固定安装脚本使用 Node 22.16.0。
 - 3DGS-PLY-3DTiles-Converter：首个接入的数据处理库，用于将 Gaussian Splatting PLY 转为 3D Tiles。
+- gdal-async：用于 ENVI BIP 栅格读取与 COGTiff 生成。Electron 36 在 Windows 下直接加载该原生绑定存在 ABI 链接问题，因此由 main 侧 Node worker 加载 Node 22 预编译绑定。
 
 ## 目录结构
 
@@ -57,6 +59,7 @@ pnpm build
 
 ## 开发启动说明
 
+- `pnpm install` 会根据 `.npmrc` 自动使用 Node 22.16.0 安装依赖，避免全局 Node 26 触发 `gdal-async` 源码编译失败。
 - 推荐使用 `pnpm dev` 启动开发环境，它会同时启动 Vite 渲染进程和 Electron 主进程。
 - `pnpm dev:main` 也可以直接启动完整开发环境，适合只记一个 Electron 启动命令时使用。
 - `pnpm dev:renderer` 只启动浏览器端 Vite 服务。

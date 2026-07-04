@@ -62,9 +62,9 @@ const pageRegistry: Record<PageId, NavigationPage> = {
   },
   "tiff-to-cogtiff": {
     id: "tiff-to-cogtiff",
-    title: "tiff 转 CogTiff",
+    title: "BIP 转 COGTiff",
     eyebrow: "数据转换工作台",
-    badge: "预留页面",
+    badge: "Main GDAL / Renderer Form",
     navMark: "栅",
     component: TiffToCogTiffPage,
   },
