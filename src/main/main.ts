@@ -5,6 +5,7 @@ import {
   registerBipToCogTiffIpc,
   registerCogTiffPreviewIpc,
   registerLocalPreviewProtocolSchemes,
+  registerObgsTo3dTilesIpc,
   registerThreeDgsTilesIpc,
   registerThreeDgsTilesPreviewIpc,
   registerWindowIpc,
@@ -91,6 +92,7 @@ async function bootstrap(): Promise<void> {
 
   registerWindowIpc(() => mainWindow);
   registerBipToCogTiffIpc(() => mainWindow);
+  registerObgsTo3dTilesIpc(() => mainWindow);
   registerCogTiffPreviewIpc(() => mainWindow);
   registerThreeDgsTilesIpc(() => mainWindow);
   registerThreeDgsTilesPreviewIpc(() => mainWindow);

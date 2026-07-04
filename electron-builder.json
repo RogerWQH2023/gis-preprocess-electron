@@ -8,6 +8,15 @@
     "dist/renderer/**/*",
     "package.json"
   ],
+  "extraResources": [
+    {
+      "from": "native-bin",
+      "to": "bin",
+      "filter": [
+        "**/*"
+      ]
+    }
+  ],
   "directories": {
     "output": "dist/app"
   },

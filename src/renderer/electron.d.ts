@@ -52,6 +52,52 @@ type ThreeDgsConversionLog = {
   createdAt: string;
 };
 
+type ObgsConversionLogLevel = "info" | "success" | "warning" | "error";
+type ObgsInputLayout = "data-directory" | "flat-blocks";
+
+type ObgsSelectDirectoryResult =
+  | { canceled: true }
+  | { canceled: false; path: string; name: string };
+
+type ObgsRootValidationResult = {
+  ok: boolean;
+  inputDir: string;
+  layout: ObgsInputLayout | null;
+  adapterRequired: boolean;
+  metadataPath: string | null;
+  dataDir: string | null;
+  rootOsgbFiles: string[];
+  dataOsgbFiles: string[];
+  detectedOsgbFiles: string[];
+  blockDirs: string[];
+  warnings: string[];
+  errors: string[];
+};
+
+type ObgsConvertRequest = {
+  taskId: string;
+  inputDir: string;
+  outputParentDir: string;
+};
+
+type ObgsConvertResult = {
+  taskId: string;
+  inputDir: string;
+  outputDir: string;
+  tilesetPath: string;
+  converterPath: string;
+  converterInputDir: string;
+  usedWorkspaceAdapter: boolean;
+  validation: ObgsRootValidationResult;
+};
+
+type ObgsConversionLog = {
+  taskId: string;
+  level: ObgsConversionLogLevel;
+  message: string;
+  createdAt: string;
+};
+
 type BipToCogTiffCompression = "DEFLATE" | "LZW";
 type BipToCogTiffPredictor = "AUTO" | "STANDARD" | "FLOATING_POINT" | "NO";
 type BipToCogTiffBigTiff = "YES" | "IF_NEEDED" | "IF_SAFER" | "NO";
@@ -161,6 +207,16 @@ declare global {
           selectTileset: () => Promise<ThreeDgsSelectTilesetResult>;
           onConversionLog: (
             callback: (log: ThreeDgsConversionLog) => void
+          ) => () => void;
+        };
+        obgsTo3dTiles: {
+          selectInputDirectory: () => Promise<ObgsSelectDirectoryResult>;
+          selectOutputDirectory: () => Promise<ObgsSelectDirectoryResult>;
+          validate: (inputDir: string) => Promise<ObgsRootValidationResult>;
+          convert: (request: ObgsConvertRequest) => Promise<ObgsConvertResult>;
+          revealOutputDirectory: (outputDir: string) => Promise<void>;
+          onConversionLog: (
+            callback: (log: ObgsConversionLog) => void
           ) => () => void;
         };
         bipToCogTiff: {

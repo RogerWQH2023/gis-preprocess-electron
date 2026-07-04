@@ -11,6 +11,7 @@ import {
 
 export { registerCogTiffPreviewIpc, registerThreeDgsTilesPreviewIpc };
 export { registerBipToCogTiffIpc } from "./bip-to-cogtiff.js";
+export { registerObgsTo3dTilesIpc } from "./obgs-to-3dtiles.js";
 export { registerThreeDgsTilesIpc } from "./three-dgs-tiles.js";
 export { bindWindowStateEvents, registerWindowIpc } from "./window.js";
 

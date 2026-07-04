@@ -20,6 +20,12 @@ const CHANNELS = {
   revealBipCogTiffOutputDirectory: "bip-to-cogtiff:reveal-output-directory",
   selectThreeDgsTileset: "three-dgs-tiles-preview:select-tileset",
   selectCogTiff: "cogtiff-preview:select-cogtiff",
+  selectObgsInputDirectory: "obgs-to-3dtiles:select-input-directory",
+  selectObgsOutputDirectory: "obgs-to-3dtiles:select-output-directory",
+  validateObgsRoot: "obgs-to-3dtiles:validate",
+  convertObgsTo3dTiles: "obgs-to-3dtiles:convert",
+  obgsTo3dTilesConversionLog: "obgs-to-3dtiles:conversion-log",
+  revealObgsOutputDirectory: "obgs-to-3dtiles:reveal-output-directory",
 } as const;
 
 type RemoveListener = () => void;
@@ -69,6 +75,47 @@ type ThreeDgsConversionLog = {
   createdAt: string;
 };
 type ThreeDgsConversionLogCallback = (log: ThreeDgsConversionLog) => void;
+type ObgsConversionLogLevel = "info" | "success" | "warning" | "error";
+type ObgsInputLayout = "data-directory" | "flat-blocks";
+type ObgsSelectDirectoryResult =
+  | { canceled: true }
+  | { canceled: false; path: string; name: string };
+type ObgsRootValidationResult = {
+  ok: boolean;
+  inputDir: string;
+  layout: ObgsInputLayout | null;
+  adapterRequired: boolean;
+  metadataPath: string | null;
+  dataDir: string | null;
+  rootOsgbFiles: string[];
+  dataOsgbFiles: string[];
+  detectedOsgbFiles: string[];
+  blockDirs: string[];
+  warnings: string[];
+  errors: string[];
+};
+type ObgsConvertRequest = {
+  taskId: string;
+  inputDir: string;
+  outputParentDir: string;
+};
+type ObgsConvertResult = {
+  taskId: string;
+  inputDir: string;
+  outputDir: string;
+  tilesetPath: string;
+  converterPath: string;
+  converterInputDir: string;
+  usedWorkspaceAdapter: boolean;
+  validation: ObgsRootValidationResult;
+};
+type ObgsConversionLog = {
+  taskId: string;
+  level: ObgsConversionLogLevel;
+  message: string;
+  createdAt: string;
+};
+type ObgsConversionLogCallback = (log: ObgsConversionLog) => void;
 type BipToCogTiffCompression = "DEFLATE" | "LZW";
 type BipToCogTiffPredictor = "AUTO" | "STANDARD" | "FLOATING_POINT" | "NO";
 type BipToCogTiffBigTiff = "YES" | "IF_NEEDED" | "IF_SAFER" | "NO";
@@ -214,6 +261,51 @@ const electronAPI = {
         return () => {
           ipcRenderer.removeListener(
             CHANNELS.threeDgsConversionLog,
+            listener
+          );
+        };
+      },
+    },
+    obgsTo3dTiles: {
+      selectInputDirectory: () =>
+        ipcRenderer.invoke(
+          CHANNELS.selectObgsInputDirectory
+        ) as Promise<ObgsSelectDirectoryResult>,
+      selectOutputDirectory: () =>
+        ipcRenderer.invoke(
+          CHANNELS.selectObgsOutputDirectory
+        ) as Promise<ObgsSelectDirectoryResult>,
+      validate: (inputDir: string) =>
+        ipcRenderer.invoke(
+          CHANNELS.validateObgsRoot,
+          inputDir
+        ) as Promise<ObgsRootValidationResult>,
+      convert: (request: ObgsConvertRequest) =>
+        ipcRenderer.invoke(
+          CHANNELS.convertObgsTo3dTiles,
+          request
+        ) as Promise<ObgsConvertResult>,
+      revealOutputDirectory: (outputDir: string) =>
+        ipcRenderer.invoke(
+          CHANNELS.revealObgsOutputDirectory,
+          outputDir
+        ) as Promise<void>,
+      onConversionLog: (
+        callback: ObgsConversionLogCallback
+      ): RemoveListener => {
+        const listener = (
+          _event: Electron.IpcRendererEvent,
+          value: ObgsConversionLog
+        ) => {
+          callback(value);
+        };
+
+        ipcRenderer.on(CHANNELS.obgsTo3dTilesConversionLog, listener);
+
+        // 转换进程输出较长时需要在页面卸载后及时移除监听。
+        return () => {
+          ipcRenderer.removeListener(
+            CHANNELS.obgsTo3dTilesConversionLog,
             listener
           );
         };
