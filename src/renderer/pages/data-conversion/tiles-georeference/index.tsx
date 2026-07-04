@@ -189,7 +189,7 @@ export function ThreeDgsTilesGeoreferencePage() {
     >
       <div className="converter-panel__header">
         <div>
-          <p className="workspace__eyebrow">工具 02</p>
+          <p className="workspace__eyebrow">工具 03</p>
           <h2 id="georeference-title">3D Tiles 控制点配准矩阵计算</h2>
         </div>
         <span className={`status-pill status-pill--${status}`}>
