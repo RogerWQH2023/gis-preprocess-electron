@@ -150,15 +150,37 @@
   stroke-width: 2.5;
 }
 
-.cogtiff-chart__point {
-  fill: #2f9e44;
-  stroke: #ffffff;
-  stroke-width: 1.5;
-}
-
 .cogtiff-chart__label {
   fill: #667085;
   font-size: 11px;
+  font-weight: 700;
+}
+
+.cogtiff-chart__hover-zone {
+  fill: transparent;
+  pointer-events: all;
+}
+
+.cogtiff-chart__hover-line {
+  stroke: #c05621;
+  stroke-dasharray: 4 4;
+  stroke-width: 1;
+}
+
+.cogtiff-chart__tooltip {
+  pointer-events: none;
+}
+
+.cogtiff-chart__tooltip rect {
+  fill: #101828;
+  opacity: 0.92;
+}
+
+.cogtiff-chart__tooltip text {
+  fill: #ffffff;
+  font-family:
+    "Cascadia Mono", "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+  font-size: 10px;
   font-weight: 700;
 }
 

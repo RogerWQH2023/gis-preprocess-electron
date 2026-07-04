@@ -4,7 +4,7 @@ import { formatBytes, summarizeSrs } from "./formatters";
 import { getPathFileName, getPathStem, joinPreviewPath } from "./pathLabels";
 
 type ToolStatus = "idle" | "ready" | "running" | "success" | "error";
-type Compression = "DEFLATE" | "LZW" | "ZSTD";
+type Compression = "DEFLATE" | "LZW";
 type Predictor = "AUTO" | "STANDARD" | "FLOATING_POINT" | "NO";
 type BigTiff = "YES" | "IF_NEEDED" | "IF_SAFER" | "NO";
 type Interleave = "BAND" | "PIXEL";
@@ -37,6 +37,8 @@ type ConversionResult = {
 };
 
 const MAX_LOG_ITEMS = 100;
+const SHOW_GDAL_TEMP_DIRECTORY_FIELD = false;
+const DEFAULT_TARGET_SRS = "EPSG:4326";
 const statusText: Record<ToolStatus, string> = {
   idle: "等待选择",
   ready: "准备就绪",
@@ -92,6 +94,7 @@ function parseBoundsInput(boundsInput: BoundsInput) {
 export function TiffToCogTiffPage() {
   const converterApi = window.electronAPI?.tools.bipToCogTiff ?? null;
   const activeTaskIdRef = useRef<string | null>(null);
+  const logPanelRef = useRef<HTMLDivElement | null>(null);
   const [inputPath, setInputPath] = useState("");
   const [inputHeader, setInputHeader] = useState<{
     hdrPath: string | null;
@@ -105,8 +108,7 @@ export function TiffToCogTiffPage() {
   const [bigTiff, setBigTiff] = useState<BigTiff>("YES");
   const [interleave, setInterleave] = useState<Interleave>("BAND");
   const [blockSize, setBlockSize] = useState(512);
-  const [overwrite, setOverwrite] = useState(true);
-  const [srs, setSrs] = useState("");
+  const [srs, setSrs] = useState(DEFAULT_TARGET_SRS);
   const [boundsEnabled, setBoundsEnabled] = useState(false);
   const [boundsInput, setBoundsInput] = useState<BoundsInput>(emptyBounds);
   const [status, setStatus] = useState<ToolStatus>("idle");
@@ -145,6 +147,16 @@ export function TiffToCogTiffPage() {
       setLogs((currentLogs) => [...currentLogs, log].slice(-MAX_LOG_ITEMS));
     });
   }, [converterApi]);
+
+  useEffect(() => {
+    const logPanel = logPanelRef.current;
+    if (!logPanel) {
+      return;
+    }
+
+    // 日志追加时自动滚动到底部，便于持续观察最新 GDAL 输出。
+    logPanel.scrollTop = logPanel.scrollHeight;
+  }, [logs]);
 
   function resetRunState(nextStatus: ToolStatus): void {
     setResult(null);
@@ -245,7 +257,7 @@ export function TiffToCogTiffPage() {
         tmpDir: tmpDir.trim() || undefined,
         srs: srs.trim() || undefined,
         bounds,
-        overwrite,
+        overwrite: false,
         options: {
           compression,
           predictor,
@@ -360,34 +372,36 @@ export function TiffToCogTiffPage() {
           ) : null}
         </div>
 
-        <div className="field-group">
-          <label className="field-label">GDAL 临时目录</label>
-          <div className="path-row">
-            <button
-              className="action-button"
-              type="button"
-              onClick={handleSelectTempDirectory}
-              disabled={!converterApi || status === "running"}
-            >
-              选择目录
-            </button>
-            <code className="path-value">
-              {tmpDir ? tmpDir : "默认输出目录"}
-            </code>
-          </div>
-          {tmpDir ? (
-            <div className="converter-actions">
+        {SHOW_GDAL_TEMP_DIRECTORY_FIELD ? (
+          <div className="field-group">
+            <label className="field-label">GDAL 临时目录</label>
+            <div className="path-row">
               <button
-                className="secondary-button"
+                className="action-button"
                 type="button"
-                onClick={() => setTmpDir("")}
-                disabled={status === "running"}
+                onClick={handleSelectTempDirectory}
+                disabled={!converterApi || status === "running"}
               >
-                清除临时目录
+                选择目录
               </button>
+              <code className="path-value">
+                {tmpDir ? tmpDir : "GDAL 默认临时目录"}
+              </code>
             </div>
-          ) : null}
-        </div>
+            {tmpDir ? (
+              <div className="converter-actions">
+                <button
+                  className="secondary-button"
+                  type="button"
+                  onClick={() => setTmpDir("")}
+                  disabled={status === "running"}
+                >
+                  清除临时目录
+                </button>
+              </div>
+            ) : null}
+          </div>
+        ) : null}
 
         <div className="raster-option-grid">
           <div className="field-group">
@@ -405,7 +419,6 @@ export function TiffToCogTiffPage() {
             >
               <option value="DEFLATE">DEFLATE</option>
               <option value="LZW">LZW</option>
-              <option value="ZSTD">ZSTD</option>
             </select>
           </div>
 
@@ -468,43 +481,31 @@ export function TiffToCogTiffPage() {
           </div>
         </div>
 
-        <div className="option-grid">
-          <div className="field-group">
-            <label className="field-label">COG 交错方式</label>
-            <div className="segmented-control">
-              <button
-                type="button"
-                aria-pressed={interleave === "BAND"}
-                onClick={() => setInterleave("BAND")}
-                disabled={status === "running"}
-              >
-                BAND
-              </button>
-              <button
-                type="button"
-                aria-pressed={interleave === "PIXEL"}
-                onClick={() => setInterleave("PIXEL")}
-                disabled={status === "running"}
-              >
-                PIXEL
-              </button>
-            </div>
-          </div>
-
-          <label className="checkbox-field">
-            <input
-              type="checkbox"
-              checked={overwrite}
-              onChange={(event) => setOverwrite(event.target.checked)}
+        <div className="field-group">
+          <label className="field-label">COG 交错方式</label>
+          <div className="segmented-control">
+            <button
+              type="button"
+              aria-pressed={interleave === "BAND"}
+              onClick={() => setInterleave("BAND")}
               disabled={status === "running"}
-            />
-            覆盖同名输出
-          </label>
+            >
+              BAND
+            </button>
+            <button
+              type="button"
+              aria-pressed={interleave === "PIXEL"}
+              onClick={() => setInterleave("PIXEL")}
+              disabled={status === "running"}
+            >
+              PIXEL
+            </button>
+          </div>
         </div>
 
         <div className="field-group">
           <label className="field-label" htmlFor="cogtiff-srs">
-            空间参考
+            目标空间参考
           </label>
           <input
             id="cogtiff-srs"
@@ -620,7 +621,7 @@ export function TiffToCogTiffPage() {
         </dl>
       ) : null}
 
-      <div className="log-panel" aria-live="polite">
+      <div className="log-panel" aria-live="polite" ref={logPanelRef}>
         {logs.length > 0 ? (
           logs.map((log, index) => (
             <p
