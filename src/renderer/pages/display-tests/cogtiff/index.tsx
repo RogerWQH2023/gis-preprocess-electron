@@ -143,7 +143,7 @@ function clampBand(value: number, bandCount: number): number {
 
 function normalizeRenderConfig(
   config: CogTiffRenderConfig,
-  bandCount: number
+  bandCount: number,
 ): CogTiffRenderConfig {
   return {
     ...config,
@@ -156,7 +156,7 @@ function normalizeRenderConfig(
 
 function validateRenderConfig(
   config: CogTiffRenderConfig,
-  metadata: CogTiffMetadata
+  metadata: CogTiffMetadata,
 ): void {
   if (config.mode !== "rgb") {
     return;
@@ -164,7 +164,7 @@ function validateRenderConfig(
 
   if (metadata.bandCount < 3) {
     throw new Error(
-      `当前 COGTiff 只有 ${metadata.bandCount} 个波段，RGB 渲染需要至少 3 个波段。请使用单波段渲染。`
+      `当前 COGTiff 只有 ${metadata.bandCount} 个波段，RGB 渲染需要至少 3 个波段。请使用单波段渲染。`,
     );
   }
 
@@ -173,7 +173,7 @@ function validateRenderConfig(
 
   if (uniqueBandCount !== selectedBands.length) {
     throw new Error(
-      "TIFFImageryProvider 的 RGB 渲染不支持重复通道，请为 R、G、B 选择 3 个不同波段。"
+      "TIFFImageryProvider 的 RGB 渲染不支持重复通道，请为 R、G、B 选择 3 个不同波段。",
     );
   }
 }
@@ -184,7 +184,10 @@ function readNumberInput(value: string, fallback: number): number {
   return Number.isFinite(parsed) ? parsed : fallback;
 }
 
-function createBandOptions(bandCount: number | undefined, value: number): number[] {
+function createBandOptions(
+  bandCount: number | undefined,
+  value: number,
+): number[] {
   const count = bandCount ?? Math.max(Math.round(value), 1);
 
   return Array.from({ length: count }, (_, index) => index + 1);
@@ -245,7 +248,7 @@ function createSmoothPath(points: ChartHoverPoint[]): string {
 
 function BandLineChart({ values }: { values: CogTiffBandValue[] }) {
   const [hoveredPoint, setHoveredPoint] = useState<ChartHoverPoint | null>(
-    null
+    null,
   );
   const width = 360;
   const height = 168;
@@ -270,8 +273,7 @@ function BandLineChart({ values }: { values: CogTiffBandValue[] }) {
       const x =
         values.length === 1
           ? width / 2
-          : padding +
-            (index / (values.length - 1)) * (width - padding * 2);
+          : padding + (index / (values.length - 1)) * (width - padding * 2);
       const y =
         height -
         padding -
@@ -309,10 +311,7 @@ function BandLineChart({ values }: { values: CogTiffBandValue[] }) {
         x2={padding}
         y2={height - padding}
       />
-      <path
-        className="cogtiff-chart__line"
-        d={pathData}
-      />
+      <path className="cogtiff-chart__line" d={pathData} />
       <text className="cogtiff-chart__label" x={padding} y={18}>
         {formatValue(maxValue)}
       </text>
@@ -413,8 +412,9 @@ export function CogTiffTestPage() {
   const [status, setStatus] = useState<LoadStatus>("idle");
   const [renderConfig, setRenderConfig] =
     useState<CogTiffRenderConfig>(defaultRenderConfig);
-  const [loadedCogTiff, setLoadedCogTiff] =
-    useState<LoadedCogTiffInfo | null>(null);
+  const [loadedCogTiff, setLoadedCogTiff] = useState<LoadedCogTiffInfo | null>(
+    null,
+  );
   const [queryStatus, setQueryStatus] = useState<QueryStatus>("idle");
   const [queryResult, setQueryResult] =
     useState<CogTiffPointQueryResult | null>(null);
@@ -446,7 +446,7 @@ export function CogTiffTestPage() {
         },
       });
     },
-    [removeQueryCrosshair]
+    [removeQueryCrosshair],
   );
 
   useEffect(() => {
@@ -481,7 +481,7 @@ export function CogTiffTestPage() {
         const url = queryUrlRef.current;
         const cartesian = viewer.camera.pickEllipsoid(
           event.position,
-          viewer.scene.globe.ellipsoid
+          viewer.scene.globe.ellipsoid,
         );
 
         if (!url || !cartesian) {
@@ -516,7 +516,7 @@ export function CogTiffTestPage() {
             setQueryErrorMessage(readErrorMessage(error));
           });
       },
-      ScreenSpaceEventType.LEFT_CLICK
+      ScreenSpaceEventType.LEFT_CLICK,
     );
 
     setDefaultView(viewer);
@@ -542,7 +542,7 @@ export function CogTiffTestPage() {
       url: string;
       sizeBytes: number;
     },
-    config: CogTiffRenderConfig
+    config: CogTiffRenderConfig,
   ): Promise<void> {
     const viewer = viewerRef.current;
 
@@ -565,7 +565,7 @@ export function CogTiffTestPage() {
       viewer,
       selection.url,
       safeConfig,
-      metadata
+      metadata,
     );
 
     layerRef.current = loaded.layer;
@@ -653,7 +653,7 @@ export function CogTiffTestPage() {
 
   function updateBandValue(
     key: "singleBand" | "redBand" | "greenBand" | "blueBand",
-    value: string
+    value: string,
   ): void {
     const bandCount = loadedCogTiff?.metadata.bandCount ?? 99;
 
@@ -795,7 +795,7 @@ export function CogTiffTestPage() {
                           ...current,
                           domainMin: readNumberInput(
                             event.target.value,
-                            current.domainMin
+                            current.domainMin,
                           ),
                         }))
                       }
@@ -813,7 +813,7 @@ export function CogTiffTestPage() {
                           ...current,
                           domainMax: readNumberInput(
                             event.target.value,
-                            current.domainMax
+                            current.domainMax,
                           ),
                         }))
                       }
@@ -862,7 +862,8 @@ export function CogTiffTestPage() {
               <div>
                 <dt>尺寸</dt>
                 <dd>
-                  {loadedCogTiff.metadata.width} x {loadedCogTiff.metadata.height}
+                  {loadedCogTiff.metadata.width} x{" "}
+                  {loadedCogTiff.metadata.height}
                 </dd>
               </div>
               <div>
@@ -890,8 +891,8 @@ export function CogTiffTestPage() {
               <>
                 <p className="cesium-stage__note">
                   Lon {queryResult.longitude.toFixed(6)}, Lat{" "}
-                  {queryResult.latitude.toFixed(6)}，像素 (
-                  {queryResult.pixelX}, {queryResult.pixelY})
+                  {queryResult.latitude.toFixed(6)}，像素 ({queryResult.pixelX},{" "}
+                  {queryResult.pixelY})
                 </p>
                 <BandLineChart values={queryResult.values} />
                 <div className="cogtiff-value-list">
@@ -914,8 +915,9 @@ export function CogTiffTestPage() {
           </section>
 
           <p className="cesium-stage__note">
-            普通 Web 项目可把 COG 放入 public/cog/demo.tif，并将加载 URL
-            写成 /cog/demo.tif；本页的本地文件选择只服务于 Electron 演示。
+            注：后续作业建议把 COG 放入 public/cog/---.tif，并将加载 URL 写成
+            /cog/---.tif；本页的本地文件选择基于 Electron
+            主进程的服务端NodeJS能力实现，不建议模仿。
           </p>
 
           {errorMessage ? (

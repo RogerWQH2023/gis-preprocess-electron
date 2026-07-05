@@ -144,10 +144,7 @@ export function ThreeDTilesTestPage() {
   }
 
   return (
-    <section
-      className="cesium-test-page"
-      aria-labelledby="tiles-test-title"
-    >
+    <section className="cesium-test-page" aria-labelledby="tiles-test-title">
       <div className="cesium-stage">
         <div className="cesium-stage__viewer" ref={containerRef} />
         <div className="cesium-stage__panel">
@@ -189,10 +186,15 @@ export function ThreeDTilesTestPage() {
           </div>
 
           <p className="cesium-stage__note">
-            课程作业默认做法：把 3D Tiles 目录放进 public，例如
+            注1：只有侧边栏填入 Cesium ion token
+            后，本页才会请求官方底图和地形。
+          </p>
+          <p className="cesium-stage__note">
+            注2：后续作业建议采用《GIS应用开发》课程中推荐的加载方法，即把 3D
+            Tiles 目录放进 public，例如
             public/3dtiles/demo/tileset.json，代码里直接加载
-            /3dtiles/demo/tileset.json。本页面的文件选择只服务于 Electron
-            桌面演示。只有侧边栏填入 Cesium ion token 后，本页才会请求官方底图和地形。
+            /3dtiles/demo/tileset.json。
+            本页面的文件选择利用了Electron应用主进程中服务端NodeJS环境的文件读取能力，不建议在作业中模仿。
           </p>
 
           {loadedTileset ? (

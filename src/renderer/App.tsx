@@ -3,6 +3,7 @@ import { useEffect, useState, type ComponentType } from "react";
 import { CesiumIonAuthProvider } from "./cesiumIonAuth";
 import { CesiumIonAuthStatus } from "./components/CesiumIonAuthStatus";
 import { WindowControls } from "./components/WindowControls";
+import appIconUrl from "../../resources/icon.png";
 import { ControlPointSearchPage } from "./pages/data-conversion/control-point-search";
 import { OsgbTo3dTilesPage } from "./pages/data-conversion/osgb-to-3dtiles";
 import { PlyTo3dTilesPage } from "./pages/data-conversion/ply-to-3dtiles";
@@ -114,7 +115,7 @@ const navigationGroups: NavigationGroup[] = [
 
 export default function App() {
   const [isMaximized, setIsMaximized] = useState(false);
-  const [activePageId, setActivePageId] = useState<PageId>("ply-to-3dtiles");
+  const [activePageId, setActivePageId] = useState<PageId>("osgb-to-3dtiles");
   const activePage = pageRegistry[activePageId];
   const ActivePage = activePage.component;
 
@@ -133,8 +134,8 @@ export default function App() {
       <div className="app-shell">
         <header className="app-titlebar">
           <div className="app-titlebar__brand">
-            <span className="app-titlebar__mark" aria-hidden="true" />
-            <span>GIS实践 数据预处理教学应用</span>
+            <img className="app-titlebar__logo" src={appIconUrl} alt="" />
+            <span>GIS实践 WebGIS部分 数据预处理教学应用</span>
           </div>
           <WindowControls isMaximized={isMaximized} />
         </header>

@@ -65,12 +65,12 @@ button {
   white-space: nowrap;
 }
 
-.app-titlebar__mark {
-  width: 14px;
-  height: 14px;
-  border-radius: 4px;
-  background:
-    linear-gradient(135deg, #1864ab 0%, #2f9e44 55%, #f08c00 100%);
+.app-titlebar__logo {
+  width: 18px;
+  height: 18px;
+  object-fit: contain;
+  user-select: none;
+  -webkit-user-drag: none;
 }
 
 .app-body {

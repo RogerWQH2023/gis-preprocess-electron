@@ -14,6 +14,7 @@ import {
   applyWindowSecurity,
   getPreloadPath,
   getRendererIndexPath,
+  getAppIconPath,
   isDev,
   lockWindowZoom,
   RENDERER_DEV_SERVER_URL,
@@ -33,6 +34,7 @@ function createMainWindow(): BrowserWindow {
     minHeight: 640,
     show: false,
     frame: false,
+    icon: getAppIconPath(),
     autoHideMenuBar: true,
     backgroundColor: "#f8fafc",
     webPreferences: {
