@@ -1,4 +1,4 @@
-# Windows x64 OBGS/OSGB 转换程序
+# Windows x64 OSGB 转换程序
 
 将 `fanvanzh/3dtiles` Windows x64 包解压到本目录，保持原包结构不变：
 

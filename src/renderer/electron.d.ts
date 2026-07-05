@@ -52,17 +52,17 @@ type ThreeDgsConversionLog = {
   createdAt: string;
 };
 
-type ObgsConversionLogLevel = "info" | "success" | "warning" | "error";
-type ObgsInputLayout = "data-directory" | "flat-blocks";
+type OsgbConversionLogLevel = "info" | "success" | "warning" | "error";
+type OsgbInputLayout = "data-directory" | "flat-blocks";
 
-type ObgsSelectDirectoryResult =
+type OsgbSelectDirectoryResult =
   | { canceled: true }
   | { canceled: false; path: string; name: string };
 
-type ObgsRootValidationResult = {
+type OsgbRootValidationResult = {
   ok: boolean;
   inputDir: string;
-  layout: ObgsInputLayout | null;
+  layout: OsgbInputLayout | null;
   adapterRequired: boolean;
   metadataPath: string | null;
   dataDir: string | null;
@@ -74,13 +74,13 @@ type ObgsRootValidationResult = {
   errors: string[];
 };
 
-type ObgsConvertRequest = {
+type OsgbConvertRequest = {
   taskId: string;
   inputDir: string;
   outputParentDir: string;
 };
 
-type ObgsConvertResult = {
+type OsgbConvertResult = {
   taskId: string;
   inputDir: string;
   outputDir: string;
@@ -88,12 +88,12 @@ type ObgsConvertResult = {
   converterPath: string;
   converterInputDir: string;
   usedWorkspaceAdapter: boolean;
-  validation: ObgsRootValidationResult;
+  validation: OsgbRootValidationResult;
 };
 
-type ObgsConversionLog = {
+type OsgbConversionLog = {
   taskId: string;
-  level: ObgsConversionLogLevel;
+  level: OsgbConversionLogLevel;
   message: string;
   createdAt: string;
 };
@@ -209,14 +209,14 @@ declare global {
             callback: (log: ThreeDgsConversionLog) => void
           ) => () => void;
         };
-        obgsTo3dTiles: {
-          selectInputDirectory: () => Promise<ObgsSelectDirectoryResult>;
-          selectOutputDirectory: () => Promise<ObgsSelectDirectoryResult>;
-          validate: (inputDir: string) => Promise<ObgsRootValidationResult>;
-          convert: (request: ObgsConvertRequest) => Promise<ObgsConvertResult>;
+        osgbTo3dTiles: {
+          selectInputDirectory: () => Promise<OsgbSelectDirectoryResult>;
+          selectOutputDirectory: () => Promise<OsgbSelectDirectoryResult>;
+          validate: (inputDir: string) => Promise<OsgbRootValidationResult>;
+          convert: (request: OsgbConvertRequest) => Promise<OsgbConvertResult>;
           revealOutputDirectory: (outputDir: string) => Promise<void>;
           onConversionLog: (
-            callback: (log: ObgsConversionLog) => void
+            callback: (log: OsgbConversionLog) => void
           ) => () => void;
         };
         bipToCogTiff: {

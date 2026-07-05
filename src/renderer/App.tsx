@@ -4,7 +4,7 @@ import { CesiumIonAuthProvider } from "./cesiumIonAuth";
 import { CesiumIonAuthStatus } from "./components/CesiumIonAuthStatus";
 import { WindowControls } from "./components/WindowControls";
 import { ControlPointSearchPage } from "./pages/data-conversion/control-point-search";
-import { ObgsTo3dTilesPage } from "./pages/data-conversion/obgs-to-3dtiles";
+import { OsgbTo3dTilesPage } from "./pages/data-conversion/osgb-to-3dtiles";
 import { PlyTo3dTilesPage } from "./pages/data-conversion/ply-to-3dtiles";
 import { ThreeDgsTilesGeoreferencePage } from "./pages/data-conversion/tiles-georeference";
 import { TiffToCogTiffPage } from "./pages/data-conversion/tiff-to-cogtiff";
@@ -13,7 +13,7 @@ import { ThreeDTilesTestPage } from "./pages/display-tests/3dtiles";
 
 type PageId =
   | "ply-to-3dtiles"
-  | "obgs-to-3dtiles"
+  | "osgb-to-3dtiles"
   | "tiles-georeference"
   | "control-point-search"
   | "tiff-to-cogtiff"
@@ -44,13 +44,13 @@ const pageRegistry: Record<PageId, NavigationPage> = {
     navMark: "转",
     component: PlyTo3dTilesPage,
   },
-  "obgs-to-3dtiles": {
-    id: "obgs-to-3dtiles",
-    title: "倾斜摄影 OBGS 转 3DTiles",
+  "osgb-to-3dtiles": {
+    id: "osgb-to-3dtiles",
+    title: "倾斜摄影 OSGB 转 3DTiles",
     eyebrow: "数据转换工作台",
     badge: "Renderer Form / 预留",
     navMark: "倾",
-    component: ObgsTo3dTilesPage,
+    component: OsgbTo3dTilesPage,
   },
   "tiles-georeference": {
     id: "tiles-georeference",
@@ -99,7 +99,7 @@ const navigationGroups: NavigationGroup[] = [
   {
     title: "数据转换工作台",
     items: [
-      "obgs-to-3dtiles",
+      "osgb-to-3dtiles",
       "ply-to-3dtiles",
       "control-point-search",
       "tiles-georeference",

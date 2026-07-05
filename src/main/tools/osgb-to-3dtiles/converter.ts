@@ -8,18 +8,18 @@ import path from "node:path";
 import type { Dirent } from "node:fs";
 
 type ConversionLogLevel = "info" | "success" | "warning" | "error";
-type ObgsInputLayout = "data-directory" | "flat-blocks";
+type OsgbInputLayout = "data-directory" | "flat-blocks";
 
-export type ObgsTo3dTilesConversionLog = {
+export type OsgbTo3dTilesConversionLog = {
   level: ConversionLogLevel;
   message: string;
   createdAt: string;
 };
 
-export type ObgsRootValidationResult = {
+export type OsgbRootValidationResult = {
   ok: boolean;
   inputDir: string;
-  layout: ObgsInputLayout | null;
+  layout: OsgbInputLayout | null;
   adapterRequired: boolean;
   metadataPath: string | null;
   dataDir: string | null;
@@ -31,22 +31,22 @@ export type ObgsRootValidationResult = {
   errors: string[];
 };
 
-export type ObgsTo3dTilesConversionRequest = {
+export type OsgbTo3dTilesConversionRequest = {
   inputDir: string;
   outputParentDir: string;
 };
 
-export type ObgsTo3dTilesConversionResult = {
+export type OsgbTo3dTilesConversionResult = {
   inputDir: string;
   outputDir: string;
   tilesetPath: string;
   converterPath: string;
   converterInputDir: string;
   usedWorkspaceAdapter: boolean;
-  validation: ObgsRootValidationResult;
+  validation: OsgbRootValidationResult;
 };
 
-type LogEmitter = (entry: ObgsTo3dTilesConversionLog) => void;
+type LogEmitter = (entry: OsgbTo3dTilesConversionLog) => void;
 type PreparedConverterInput = {
   converterInputDir: string;
   workspaceDir: string | null;
@@ -73,7 +73,7 @@ function emitLog(
   });
 }
 
-function getObgsConverterBaseDir(): string {
+function getOsgbConverterBaseDir(): string {
   if (process.platform !== "win32" || process.arch !== "x64") {
     throw new Error(
       `当前暂只支持 Windows x64 平台：${process.platform}-${process.arch}`
@@ -85,8 +85,8 @@ function getObgsConverterBaseDir(): string {
     : path.join(process.cwd(), "native-bin", "win32-x64");
 }
 
-async function resolveObgsConverterPath(): Promise<string> {
-  const converterBaseDir = getObgsConverterBaseDir();
+async function resolveOsgbConverterPath(): Promise<string> {
+  const converterBaseDir = getOsgbConverterBaseDir();
 
   for (const fileName of CONVERTER_FILE_NAMES) {
     const candidatePath = path.join(converterBaseDir, fileName);
@@ -114,7 +114,7 @@ function sanitizeOutputBaseName(fileName: string): string {
     .replace(/\s+/g, " ")
     .trim();
 
-  return safeName.length > 0 ? safeName : "obgs-model";
+  return safeName.length > 0 ? safeName : "osgb-model";
 }
 
 function hasPathCompatibilityRisk(value: string): boolean {
@@ -250,7 +250,7 @@ function createConverterEnvironment(converterDir: string): NodeJS.ProcessEnv {
 }
 
 function getWorkspaceTasksRoot(): string {
-  return path.join(app.getPath("userData"), "tasks", "obgs-to-3dtiles");
+  return path.join(app.getPath("userData"), "tasks", "osgb-to-3dtiles");
 }
 
 async function removeWorkspace(workspaceDir: string): Promise<void> {
@@ -266,7 +266,7 @@ async function removeWorkspace(workspaceDir: string): Promise<void> {
 }
 
 async function createFlatLayoutWorkspace(
-  validation: ObgsRootValidationResult,
+  validation: OsgbRootValidationResult,
   onLog: LogEmitter | undefined
 ): Promise<PreparedConverterInput> {
   if (!validation.metadataPath) {
@@ -307,7 +307,7 @@ async function createFlatLayoutWorkspace(
 
 async function prepareConverterInput(
   inputDir: string,
-  validation: ObgsRootValidationResult,
+  validation: OsgbRootValidationResult,
   onLog: LogEmitter | undefined
 ): Promise<PreparedConverterInput> {
   if (validation.layout === "flat-blocks") {
@@ -322,7 +322,7 @@ async function prepareConverterInput(
   };
 }
 
-export function makeDefaultObgsOutputDir(
+export function makeDefaultOsgbOutputDir(
   inputDir: string,
   outputParentDir: string
 ): string {
@@ -330,11 +330,11 @@ export function makeDefaultObgsOutputDir(
   return path.join(outputParentDir, `${inputBaseName}-3dtiles`);
 }
 
-export async function validateObgsRoot(
+export async function validateOsgbRoot(
   inputDir: string
-): Promise<ObgsRootValidationResult> {
+): Promise<OsgbRootValidationResult> {
   const resolvedInputDir = path.resolve(inputDir);
-  const result: ObgsRootValidationResult = {
+  const result: OsgbRootValidationResult = {
     ok: false,
     inputDir: resolvedInputDir,
     layout: null,
@@ -464,18 +464,18 @@ function createLineHandler(
   };
 }
 
-export async function convertObgsTo3dTiles(
-  request: ObgsTo3dTilesConversionRequest,
+export async function convertOsgbTo3dTiles(
+  request: OsgbTo3dTilesConversionRequest,
   onLog?: LogEmitter
-): Promise<ObgsTo3dTilesConversionResult> {
+): Promise<OsgbTo3dTilesConversionResult> {
   const inputDir = path.resolve(request.inputDir);
   const outputParentDir = path.resolve(request.outputParentDir);
-  const outputDir = makeDefaultObgsOutputDir(inputDir, outputParentDir);
-  const converterPath = await resolveObgsConverterPath();
+  const outputDir = makeDefaultOsgbOutputDir(inputDir, outputParentDir);
+  const converterPath = await resolveOsgbConverterPath();
   const converterDir = path.dirname(converterPath);
 
   emitLog(onLog, "info", "校验输入目录。");
-  const validation = await validateObgsRoot(inputDir);
+  const validation = await validateOsgbRoot(inputDir);
   if (!validation.ok) {
     throw new Error(validation.errors.join("；"));
   }
@@ -531,7 +531,7 @@ export async function convertObgsTo3dTiles(
         stderrHandler.flush();
 
         if (code !== 0) {
-          reject(new Error(`OBGS 转 3DTiles 失败，退出码：${code ?? "未知"}`));
+          reject(new Error(`OSGB 转 3DTiles 失败，退出码：${code ?? "未知"}`));
           return;
         }
 

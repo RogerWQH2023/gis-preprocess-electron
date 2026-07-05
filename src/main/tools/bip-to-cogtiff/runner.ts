@@ -76,7 +76,20 @@ async function resolveNodeExecutable(): Promise<NodeExecutableResolution> {
 }
 
 function getWorkerScriptPath(): string {
-  return fileURLToPath(new URL("./worker.js", import.meta.url));
+  const workerScriptPath = fileURLToPath(new URL("./worker.js", import.meta.url));
+  const asarSegment = `${path.sep}app.asar${path.sep}`;
+  const asarIndex = workerScriptPath.indexOf(asarSegment);
+
+  if (asarIndex === -1) {
+    return workerScriptPath;
+  }
+
+  // GDAL worker 使用外部 Node 22 执行；普通 Node 不能读取 Electron 的 app.asar 虚拟路径。
+  return path.join(
+    workerScriptPath.slice(0, asarIndex),
+    "app.asar.unpacked",
+    workerScriptPath.slice(asarIndex + asarSegment.length)
+  );
 }
 
 function toError(error: WorkerErrorPayload): Error {

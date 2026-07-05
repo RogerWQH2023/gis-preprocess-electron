@@ -7,7 +7,7 @@ export function getPathStem(filePath: string): string {
   const fileName = getPathFileName(filePath);
   const safeName = fileName.replace(/[<>:"/\\|?*]/g, "_").trim();
 
-  return safeName || "obgs-model";
+  return safeName || "osgb-model";
 }
 
 export function joinPreviewPath(parentDir: string, childName: string): string {

@@ -20,12 +20,12 @@ const CHANNELS = {
   revealBipCogTiffOutputDirectory: "bip-to-cogtiff:reveal-output-directory",
   selectThreeDgsTileset: "three-dgs-tiles-preview:select-tileset",
   selectCogTiff: "cogtiff-preview:select-cogtiff",
-  selectObgsInputDirectory: "obgs-to-3dtiles:select-input-directory",
-  selectObgsOutputDirectory: "obgs-to-3dtiles:select-output-directory",
-  validateObgsRoot: "obgs-to-3dtiles:validate",
-  convertObgsTo3dTiles: "obgs-to-3dtiles:convert",
-  obgsTo3dTilesConversionLog: "obgs-to-3dtiles:conversion-log",
-  revealObgsOutputDirectory: "obgs-to-3dtiles:reveal-output-directory",
+  selectOsgbInputDirectory: "osgb-to-3dtiles:select-input-directory",
+  selectOsgbOutputDirectory: "osgb-to-3dtiles:select-output-directory",
+  validateOsgbRoot: "osgb-to-3dtiles:validate",
+  convertOsgbTo3dTiles: "osgb-to-3dtiles:convert",
+  osgbTo3dTilesConversionLog: "osgb-to-3dtiles:conversion-log",
+  revealOsgbOutputDirectory: "osgb-to-3dtiles:reveal-output-directory",
 } as const;
 
 type RemoveListener = () => void;
@@ -75,15 +75,15 @@ type ThreeDgsConversionLog = {
   createdAt: string;
 };
 type ThreeDgsConversionLogCallback = (log: ThreeDgsConversionLog) => void;
-type ObgsConversionLogLevel = "info" | "success" | "warning" | "error";
-type ObgsInputLayout = "data-directory" | "flat-blocks";
-type ObgsSelectDirectoryResult =
+type OsgbConversionLogLevel = "info" | "success" | "warning" | "error";
+type OsgbInputLayout = "data-directory" | "flat-blocks";
+type OsgbSelectDirectoryResult =
   | { canceled: true }
   | { canceled: false; path: string; name: string };
-type ObgsRootValidationResult = {
+type OsgbRootValidationResult = {
   ok: boolean;
   inputDir: string;
-  layout: ObgsInputLayout | null;
+  layout: OsgbInputLayout | null;
   adapterRequired: boolean;
   metadataPath: string | null;
   dataDir: string | null;
@@ -94,12 +94,12 @@ type ObgsRootValidationResult = {
   warnings: string[];
   errors: string[];
 };
-type ObgsConvertRequest = {
+type OsgbConvertRequest = {
   taskId: string;
   inputDir: string;
   outputParentDir: string;
 };
-type ObgsConvertResult = {
+type OsgbConvertResult = {
   taskId: string;
   inputDir: string;
   outputDir: string;
@@ -107,15 +107,15 @@ type ObgsConvertResult = {
   converterPath: string;
   converterInputDir: string;
   usedWorkspaceAdapter: boolean;
-  validation: ObgsRootValidationResult;
+  validation: OsgbRootValidationResult;
 };
-type ObgsConversionLog = {
+type OsgbConversionLog = {
   taskId: string;
-  level: ObgsConversionLogLevel;
+  level: OsgbConversionLogLevel;
   message: string;
   createdAt: string;
 };
-type ObgsConversionLogCallback = (log: ObgsConversionLog) => void;
+type OsgbConversionLogCallback = (log: OsgbConversionLog) => void;
 type BipToCogTiffCompression = "DEFLATE" | "LZW";
 type BipToCogTiffPredictor = "AUTO" | "STANDARD" | "FLOATING_POINT" | "NO";
 type BipToCogTiffBigTiff = "YES" | "IF_NEEDED" | "IF_SAFER" | "NO";
@@ -266,46 +266,46 @@ const electronAPI = {
         };
       },
     },
-    obgsTo3dTiles: {
+    osgbTo3dTiles: {
       selectInputDirectory: () =>
         ipcRenderer.invoke(
-          CHANNELS.selectObgsInputDirectory
-        ) as Promise<ObgsSelectDirectoryResult>,
+          CHANNELS.selectOsgbInputDirectory
+        ) as Promise<OsgbSelectDirectoryResult>,
       selectOutputDirectory: () =>
         ipcRenderer.invoke(
-          CHANNELS.selectObgsOutputDirectory
-        ) as Promise<ObgsSelectDirectoryResult>,
+          CHANNELS.selectOsgbOutputDirectory
+        ) as Promise<OsgbSelectDirectoryResult>,
       validate: (inputDir: string) =>
         ipcRenderer.invoke(
-          CHANNELS.validateObgsRoot,
+          CHANNELS.validateOsgbRoot,
           inputDir
-        ) as Promise<ObgsRootValidationResult>,
-      convert: (request: ObgsConvertRequest) =>
+        ) as Promise<OsgbRootValidationResult>,
+      convert: (request: OsgbConvertRequest) =>
         ipcRenderer.invoke(
-          CHANNELS.convertObgsTo3dTiles,
+          CHANNELS.convertOsgbTo3dTiles,
           request
-        ) as Promise<ObgsConvertResult>,
+        ) as Promise<OsgbConvertResult>,
       revealOutputDirectory: (outputDir: string) =>
         ipcRenderer.invoke(
-          CHANNELS.revealObgsOutputDirectory,
+          CHANNELS.revealOsgbOutputDirectory,
           outputDir
         ) as Promise<void>,
       onConversionLog: (
-        callback: ObgsConversionLogCallback
+        callback: OsgbConversionLogCallback
       ): RemoveListener => {
         const listener = (
           _event: Electron.IpcRendererEvent,
-          value: ObgsConversionLog
+          value: OsgbConversionLog
         ) => {
           callback(value);
         };
 
-        ipcRenderer.on(CHANNELS.obgsTo3dTilesConversionLog, listener);
+        ipcRenderer.on(CHANNELS.osgbTo3dTilesConversionLog, listener);
 
         // 转换进程输出较长时需要在页面卸载后及时移除监听。
         return () => {
           ipcRenderer.removeListener(
-            CHANNELS.obgsTo3dTilesConversionLog,
+            CHANNELS.osgbTo3dTilesConversionLog,
             listener
           );
         };

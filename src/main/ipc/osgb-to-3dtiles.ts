@@ -3,10 +3,10 @@ import { randomUUID } from "node:crypto";
 import path from "node:path";
 
 import {
-  convertObgsTo3dTiles,
-  validateObgsRoot,
-  type ObgsTo3dTilesConversionLog,
-} from "../tools/obgs-to-3dtiles/converter.js";
+  convertOsgbTo3dTiles,
+  validateOsgbRoot,
+  type OsgbTo3dTilesConversionLog,
+} from "../tools/osgb-to-3dtiles/converter.js";
 
 import type {
   IpcMainInvokeEvent,
@@ -15,12 +15,12 @@ import type {
 } from "electron";
 
 const CHANNELS = {
-  selectInputDirectory: "obgs-to-3dtiles:select-input-directory",
-  selectOutputDirectory: "obgs-to-3dtiles:select-output-directory",
-  validate: "obgs-to-3dtiles:validate",
-  convert: "obgs-to-3dtiles:convert",
-  conversionLog: "obgs-to-3dtiles:conversion-log",
-  revealOutputDirectory: "obgs-to-3dtiles:reveal-output-directory",
+  selectInputDirectory: "osgb-to-3dtiles:select-input-directory",
+  selectOutputDirectory: "osgb-to-3dtiles:select-output-directory",
+  validate: "osgb-to-3dtiles:validate",
+  convert: "osgb-to-3dtiles:convert",
+  conversionLog: "osgb-to-3dtiles:conversion-log",
+  revealOutputDirectory: "osgb-to-3dtiles:reveal-output-directory",
 } as const;
 
 type MainWindowGetter = () => BrowserWindow | null;
@@ -36,7 +36,7 @@ type RendererConversionRequest = {
   outputParentDir: string;
 };
 
-let hasRegisteredObgsTo3dTilesIpc = false;
+let hasRegisteredOsgbTo3dTilesIpc = false;
 let activeConversionTaskId: string | null = null;
 
 function resolveWindow(
@@ -86,7 +86,7 @@ function normalizeConversionRequest(payload: unknown): RendererConversionRequest
 function sendConversionLog(
   event: IpcMainInvokeEvent,
   taskId: string,
-  log: ObgsTo3dTilesConversionLog
+  log: OsgbTo3dTilesConversionLog
 ): void {
   if (event.sender.isDestroyed()) {
     return;
@@ -98,21 +98,21 @@ function sendConversionLog(
   });
 }
 
-export function registerObgsTo3dTilesIpc(
+export function registerOsgbTo3dTilesIpc(
   getMainWindow: MainWindowGetter
 ): void {
-  if (hasRegisteredObgsTo3dTilesIpc) {
+  if (hasRegisteredOsgbTo3dTilesIpc) {
     return;
   }
 
-  hasRegisteredObgsTo3dTilesIpc = true;
+  hasRegisteredOsgbTo3dTilesIpc = true;
 
   ipcMain.handle(
     CHANNELS.selectInputDirectory,
     async (event): Promise<SelectDirectoryResult> => {
       const browserWindow = resolveWindow(event, getMainWindow);
       const result = await showOpenDialog(browserWindow, {
-        title: "选择倾斜摄影 OBGS 根目录",
+        title: "选择倾斜摄影 OSGB 根目录",
         properties: ["openDirectory"],
       });
 
@@ -156,7 +156,7 @@ export function registerObgsTo3dTilesIpc(
       throw new Error("缺少输入目录路径。");
     }
 
-    return validateObgsRoot(value);
+    return validateOsgbRoot(value);
   });
 
   ipcMain.handle(CHANNELS.convert, async (event, payload: unknown) => {
@@ -171,11 +171,11 @@ export function registerObgsTo3dTilesIpc(
     try {
       sendConversionLog(event, request.taskId, {
         level: "info",
-        message: "开始 OBGS 转 3DTiles。",
+        message: "开始 OSGB 转 3DTiles。",
         createdAt: new Date().toISOString(),
       });
 
-      const result = await convertObgsTo3dTiles(
+      const result = await convertOsgbTo3dTiles(
         {
           inputDir: request.inputDir,
           outputParentDir: request.outputParentDir,

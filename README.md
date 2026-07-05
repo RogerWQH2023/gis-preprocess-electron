@@ -72,6 +72,8 @@ pnpm build
 - `pnpm build:app` 会先执行完整前后端构建，再通过 `electron-builder` 生成 Windows x64 便携版程序。
 - 当前 `pnpm-workspace.yaml` 使用 `overrides` 将 `@electron/get` 固定到 `3.1.0`。这是为了避免 `electron-builder 26.15.x` 的内部依赖落到缺少 `ElectronDownloadCacheMode` 的 `@electron/get 3.0.0`，导致打包时报 `Cannot read properties of undefined (reading 'ReadWrite')`。
 - Windows 打包配置使用本地 `node_modules/electron/dist` 作为 `electronDist`，避免打包阶段重复从 GitHub 下载 Electron zip。
+- `electron-builder.json` 显式设置 `npmRebuild: false`，避免打包阶段把 `gdal-async` 重建为 Electron ABI 绑定。当前 GDAL 转换由 Node 22 worker 加载 `node-v127` 预编译绑定，打包前应先执行 `pnpm install` 确保该绑定已安装。
+- BIP 转 COGTiff 的 Node worker、`gdal-async` bundled 依赖和 `@petamoriken/float16` 会被解包到 `app.asar.unpacked`，因为外部 Node 22 无法直接执行或解析 `app.asar` 内的脚本与依赖。
 - `scripts/run-electron-builder.mjs` 会为打包阶段设置 Electron 和 electron-builder 二进制镜像，减少国内网络访问 GitHub release 超时的问题。
 - 使用本地 `electronDist` 时，`scripts/cleanup-electron-dist.cjs` 会在打包过程中移除 Electron 默认模板文件，避免 `default_app.asar` 混入最终产物。
 

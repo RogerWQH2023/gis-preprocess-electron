@@ -73,8 +73,8 @@ function formatLayoutLabel(layout: ValidationResult["layout"]): string {
   return "未识别";
 }
 
-export function ObgsTo3dTilesPage() {
-  const converterApi = window.electronAPI?.tools.obgsTo3dTiles ?? null;
+export function OsgbTo3dTilesPage() {
+  const converterApi = window.electronAPI?.tools.osgbTo3dTiles ?? null;
   const activeTaskIdRef = useRef<string | null>(null);
   const [inputDir, setInputDir] = useState("");
   const [outputParentDir, setOutputParentDir] = useState("");
@@ -229,12 +229,12 @@ export function ObgsTo3dTilesPage() {
   return (
     <section
       className="converter-panel converter-panel--wide"
-      aria-labelledby="obgs-title"
+      aria-labelledby="osgb-title"
     >
       <div className="converter-panel__header">
         <div>
           <p className="workspace__eyebrow">工具 02</p>
-          <h2 id="obgs-title">倾斜摄影 OBGS 转 3DTiles</h2>
+          <h2 id="osgb-title">倾斜摄影 OSGB 转 3DTiles</h2>
         </div>
         <span className={`status-pill status-pill--${status === "validating" ? "running" : status}`}>
           {statusText[status]}
@@ -247,7 +247,7 @@ export function ObgsTo3dTilesPage() {
 
       <div className="converter-form">
         <div className="field-group">
-          <label className="field-label">输入 OBGS 根目录</label>
+          <label className="field-label">输入 OSGB 根目录</label>
           <div className="path-row">
             <button
               className="action-button"
