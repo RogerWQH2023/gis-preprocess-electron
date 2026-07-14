@@ -28,8 +28,8 @@ let mainWindow: BrowserWindow | null = null;
 
 function createMainWindow(): BrowserWindow {
   const browserWindow = new BrowserWindow({
-    width: 1280,
-    height: 800,
+    width: 1440,
+    height: 900,
     minWidth: 960,
     minHeight: 640,
     show: false,
