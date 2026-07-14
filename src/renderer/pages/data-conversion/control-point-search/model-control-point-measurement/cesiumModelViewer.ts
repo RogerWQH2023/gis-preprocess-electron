@@ -9,8 +9,42 @@ import {
 
 import { formatNumber } from "./controlPointModelUtils";
 
-import type { Viewer as CesiumViewer } from "cesium";
+import type { Cesium3DTileset, Viewer as CesiumViewer } from "cesium";
 import type { ControlPoint, LocalVector3, RayObservation } from "./types";
+
+const MIN_PROJECTED_MODEL_DIAMETER = 720;
+const MAX_MODEL_RESOLUTION_SCALE = 4;
+const MODEL_RESOLUTION_SCALE_STEP = 0.25;
+const pixelDimensionsScratch = new Cartesian2();
+
+export const MODEL_MAXIMUM_SCREEN_SPACE_ERROR = 8;
+
+function applyAdaptiveModelDisplayQuality(
+  viewer: CesiumViewer,
+  tileset: Cesium3DTileset,
+  resolutionScale: number,
+): void {
+  const maximumScreenSpaceError =
+    MODEL_MAXIMUM_SCREEN_SPACE_ERROR / resolutionScale;
+  const resolutionChanged =
+    Math.abs(viewer.resolutionScale - resolutionScale) >= 0.01;
+  const screenSpaceErrorChanged =
+    Math.abs(tileset.maximumScreenSpaceError - maximumScreenSpaceError) >=
+    0.01;
+
+  if (!resolutionChanged && !screenSpaceErrorChanged) {
+    return;
+  }
+
+  viewer.resolutionScale = resolutionScale;
+  tileset.maximumScreenSpaceError = maximumScreenSpaceError;
+
+  if (resolutionChanged) {
+    viewer.resize();
+  }
+
+  viewer.scene.requestRender();
+}
 
 export function toLocalVector3(value: Cartesian3): LocalVector3 {
   return {
@@ -94,6 +128,76 @@ export function createModelViewer(container: HTMLDivElement): CesiumViewer {
   viewer.camera.constrainedAxis = undefined;
 
   return viewer;
+}
+
+export function updateAdaptiveModelDisplayQuality(
+  viewer: CesiumViewer,
+  tileset: Cesium3DTileset,
+): void {
+  // 先同步容器尺寸，确保 drawingBuffer 和当前 CSS 布局一致。
+  viewer.resize();
+
+  const scene = viewer.scene;
+  const canvas = scene.canvas;
+  const { drawingBufferWidth, drawingBufferHeight } = scene;
+  const boundingSphere = tileset.boundingSphere;
+  const distanceToCenter = Cartesian3.distance(
+    viewer.camera.positionWC,
+    boundingSphere.center,
+  );
+
+  if (
+    drawingBufferWidth <= 0 ||
+    drawingBufferHeight <= 0 ||
+    canvas.clientWidth <= 0 ||
+    canvas.clientHeight <= 0 ||
+    boundingSphere.radius <= 0 ||
+    distanceToCenter <= boundingSphere.radius
+  ) {
+    applyAdaptiveModelDisplayQuality(viewer, tileset, 1);
+    return;
+  }
+
+  const pixelDimensions = viewer.camera.frustum.getPixelDimensions(
+    drawingBufferWidth,
+    drawingBufferHeight,
+    distanceToCenter,
+    drawingBufferWidth / canvas.clientWidth,
+    pixelDimensionsScratch,
+  );
+  const metersPerCssPixel = Math.max(
+    pixelDimensions.x,
+    pixelDimensions.y,
+  );
+
+  if (!Number.isFinite(metersPerCssPixel) || metersPerCssPixel <= 0) {
+    return;
+  }
+
+  const projectedDiameter =
+    (boundingSphere.radius * 2) / metersPerCssPixel;
+  const requiredScale = Math.min(
+    MAX_MODEL_RESOLUTION_SCALE,
+    Math.max(1, MIN_PROJECTED_MODEL_DIAMETER / projectedDiameter),
+  );
+  const nextScale = Math.min(
+    MAX_MODEL_RESOLUTION_SCALE,
+    Math.ceil(requiredScale / MODEL_RESOLUTION_SCALE_STEP) *
+      MODEL_RESOLUTION_SCALE_STEP,
+  );
+
+  console.debug("[model-display-quality]", {
+    canvasWidth: canvas.clientWidth,
+    canvasHeight: canvas.clientHeight,
+    projectedDiameter,
+    resolutionScale: nextScale,
+    maximumScreenSpaceError:
+      MODEL_MAXIMUM_SCREEN_SPACE_ERROR / nextScale,
+  });
+
+  // Cesium 的瓦片 SSE 会除以 pixelRatio，因此只提高 resolutionScale
+  // 不会触发更深层级；同步降低阈值才能完整模拟放大窗口的效果。
+  applyAdaptiveModelDisplayQuality(viewer, tileset, nextScale);
 }
 
 export function renderControlPointMarkers(

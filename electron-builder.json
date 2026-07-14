@@ -3,11 +3,18 @@
   "productName": "GIS Data Preprocess Teaching",
   "electronDist": "node_modules/electron/dist",
   "afterExtract": "scripts/cleanup-electron-dist.cjs",
+  "afterPack": "scripts/verify-packaged-gdal-runtime.mjs",
   "npmRebuild": false,
   "asarUnpack": [
     "package.json",
     "dist/main/tools/bip-to-cogtiff/**/*",
-    "node_modules/@petamoriken/float16/**/*"
+    "node_modules/@petamoriken/float16/**/*",
+    "node_modules/xmlbuilder2/**/*",
+    "node_modules/@oozcitak/**/*",
+    "node_modules/js-yaml/**/*",
+    "node_modules/argparse/**/*",
+    "node_modules/esprima/**/*",
+    "node_modules/sprintf-js/**/*"
   ],
   "files": [
     "dist/main/**/*",
@@ -34,6 +41,14 @@
       "to": "app.asar.unpacked/node_modules/gdal-async/node_modules",
       "filter": [
         "**/*"
+      ]
+    },
+    {
+      "from": "dist/runtime/gdal-node",
+      "to": "gdal-node",
+      "filter": [
+        "node.exe",
+        "LICENSE.node.txt"
       ]
     }
   ],

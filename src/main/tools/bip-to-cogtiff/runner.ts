@@ -14,7 +14,13 @@ const REQUIRED_NODE_ABI = "127";
 
 type NodeExecutableResolution = {
   command: string;
+  message?: string;
   warning?: string;
+};
+
+type WorkerScriptResolution = {
+  scriptPath: string;
+  resourcesPath: string | null;
 };
 
 type WorkerErrorPayload = {
@@ -43,10 +49,29 @@ async function pathExists(filePath: string): Promise<boolean> {
     .catch(() => false);
 }
 
-async function resolveNodeExecutable(): Promise<NodeExecutableResolution> {
+async function resolveNodeExecutable(
+  resourcesPath: string | null
+): Promise<NodeExecutableResolution> {
   const configuredNode = process.env.BIP_TO_COGTIFF_NODE?.trim();
   if (configuredNode && (await pathExists(configuredNode))) {
-    return { command: configuredNode };
+    return {
+      command: configuredNode,
+      message: `使用 BIP_TO_COGTIFF_NODE 指定的 Node worker：${configuredNode}`,
+    };
+  }
+
+  if (resourcesPath) {
+    const bundledNode = path.join(resourcesPath, "gdal-node", "node.exe");
+    if (await pathExists(bundledNode)) {
+      return {
+        command: bundledNode,
+        message: `使用应用内置 Node ${REQUIRED_NODE_VERSION} 运行 GDAL worker。`,
+      };
+    }
+
+    throw new Error(
+      `安装包缺少 GDAL worker 的内置 Node ${REQUIRED_NODE_VERSION}：${bundledNode}。请在 Node ${REQUIRED_NODE_VERSION} 环境中重新执行 pnpm build:app。`
+    );
   }
 
   const candidates: string[] = [];
@@ -71,25 +96,32 @@ async function resolveNodeExecutable(): Promise<NodeExecutableResolution> {
   return {
     command: "node",
     warning:
-      "未找到 pnpm 管理的 Node 22.16.0，将尝试使用 PATH 中的 node；如果当前 node 不是 ABI 127，GDAL worker 会拒绝执行。",
+      "开发环境未找到 pnpm 管理的 Node 22.16.0，将尝试使用 PATH 中的 node；如果当前 node 不是 ABI 127，GDAL worker 会拒绝执行。",
   };
 }
 
-function getWorkerScriptPath(): string {
+function resolveWorkerScript(): WorkerScriptResolution {
   const workerScriptPath = fileURLToPath(new URL("./worker.js", import.meta.url));
   const asarSegment = `${path.sep}app.asar${path.sep}`;
   const asarIndex = workerScriptPath.indexOf(asarSegment);
 
   if (asarIndex === -1) {
-    return workerScriptPath;
+    return {
+      scriptPath: workerScriptPath,
+      resourcesPath: null,
+    };
   }
 
   // GDAL worker 使用外部 Node 22 执行；普通 Node 不能读取 Electron 的 app.asar 虚拟路径。
-  return path.join(
-    workerScriptPath.slice(0, asarIndex),
-    "app.asar.unpacked",
-    workerScriptPath.slice(asarIndex + asarSegment.length)
-  );
+  const resourcesPath = workerScriptPath.slice(0, asarIndex);
+  return {
+    scriptPath: path.join(
+      resourcesPath,
+      "app.asar.unpacked",
+      workerScriptPath.slice(asarIndex + asarSegment.length)
+    ),
+    resourcesPath,
+  };
 }
 
 function toError(error: WorkerErrorPayload): Error {
@@ -119,9 +151,17 @@ export async function runBipToCogTiffWorker(
   request: BipToCogTiffConversionRequest,
   onLog?: (entry: BipToCogTiffConversionLog) => void
 ): Promise<BipToCogTiffConversionResult> {
-  const nodeExecutable = await resolveNodeExecutable();
-  const workerScriptPath = getWorkerScriptPath();
-  await fs.access(workerScriptPath);
+  const workerScript = resolveWorkerScript();
+  const nodeExecutable = await resolveNodeExecutable(workerScript.resourcesPath);
+  await fs.access(workerScript.scriptPath);
+
+  if (nodeExecutable.message) {
+    onLog?.({
+      level: "info",
+      message: nodeExecutable.message,
+      createdAt: new Date().toISOString(),
+    });
+  }
 
   if (nodeExecutable.warning) {
     onLog?.({
@@ -132,7 +172,7 @@ export async function runBipToCogTiffWorker(
   }
 
   return new Promise((resolve, reject) => {
-    const child = spawn(nodeExecutable.command, [workerScriptPath], {
+    const child = spawn(nodeExecutable.command, [workerScript.scriptPath], {
       cwd: process.cwd(),
       env: {
         ...process.env,

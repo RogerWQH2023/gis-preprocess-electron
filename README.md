@@ -28,8 +28,9 @@
 ## 环境要求
 
 - 操作系统：推荐 Windows x64。当前 OSGB 转换器位于 `native-bin/win32-x64`，暂只按 Windows x64 路径配置。
-- Node.js：项目通过 `.npmrc` 固定 `use-node-version=22.16.0`，用于避免 `gdal-async` 原生绑定在更高版本 Node 下源码编译失败。
+- Node.js（仅开发和打包需要）：项目通过 `.npmrc` 固定 `use-node-version=22.16.0`，用于匹配 `gdal-async` 的 Node ABI 127 原生绑定。
 - 包管理器：`pnpm@10.32.1`，已在 `package.json` 中声明。
+- 学生机：运行打包产物不需要另行安装 Node.js 或 pnpm；Node 22.16.0 会随应用一同分发。
 - Cesium ion token：可选。未配置 token 时，3D Tiles 和 COGTiff 本地加载仍可使用；官方底图、世界地形和 OSM 建筑需要配置 token。
 - 数据路径：OSGB 转换器对中文路径或包含空格的路径可能不稳定，教学数据建议放在纯英文路径中。
 
@@ -181,11 +182,16 @@ pnpm build:app
 
 打包产物输出到 `dist/app`。当前 `build:app` 脚本显式生成 Windows x64 便携版，且 OSGB 转换能力依赖 `native-bin/win32-x64` 下的原生程序和 DLL。
 
+课堂分发时可直接使用 `dist/app/GIS Data Preprocess Teaching 0.1.0.exe`。如果需要分发 unpacked 版本，必须完整压缩 `dist/app/win-unpacked` 目录，不能只复制其中的主程序，否则 `resources/gdal-node` 和其他原生依赖会丢失。
+
 项目打包配置中的几个关键点：
 
 - `electronDist` 指向本地 `node_modules/electron/dist`，避免打包阶段重复下载 Electron。
 - `npmRebuild: false` 用于避免把 `gdal-async` 重建为 Electron ABI 绑定。
-- BIP 转 COGTiff 的实际 GDAL 调用由 Node 22 worker 执行，以规避 Electron 36 在 Windows 下直接加载 `gdal-async` 原生绑定的 ABI 问题。
+- `stage:gdal-runtime` 会先校验当前运行时必须是 Node 22.16.0 / ABI 127，并实际加载一次 `gdal-async`；校验失败时会中止打包。
+- BIP 转 COGTiff 的实际 GDAL 调用由 Node 22 worker 执行，以规避 Electron 36 在 Windows 下直接加载 `gdal-async` 原生绑定的 ABI 问题。该 Node 运行时会被复制到产物的 `resources/gdal-node/node.exe`，生产环境不会依赖学生机的 `PATH`。
+- Node worker、`gdal-async`、`xmlbuilder2` 及其传递依赖位于 `resources/app.asar.unpacked`，供普通 Node 进程直接读取。
+- electron-builder 的 `afterPack` 钩子会限制 worker 只能从 `app.asar.unpacked` 解析模块，并实际执行一次小型 BIP 转 COGTiff；漏打任何生产依赖都会中止打包。
 - `native-bin` 会被复制到应用资源目录下的 `bin`，供打包后的 OSGB 转换功能调用。
 - `scripts/run-electron-builder.mjs` 会设置 Electron 和 electron-builder 二进制镜像，降低国内网络环境下下载失败的概率。
 

@@ -27,7 +27,9 @@ import {
 import {
   createModelViewer,
   createObservation,
+  MODEL_MAXIMUM_SCREEN_SPACE_ERROR,
   renderControlPointMarkers,
+  updateAdaptiveModelDisplayQuality,
 } from "./cesiumModelViewer";
 import {
   createDefaultNavigation,
@@ -87,7 +89,9 @@ export function ModelControlPointMeasurement({
     Set<string>
   >(new Set());
   const [modelRadius, setModelRadius] = useState(1);
-  const [message, setMessage] = useState("局部坐标模式：XYZ 单位继承模型数据。");
+  const [message, setMessage] = useState(
+    "局部坐标模式：XYZ 单位继承模型数据。",
+  );
   const [errorMessage, setErrorMessage] = useState("");
 
   const activeControlPoint = useMemo(
@@ -116,9 +120,32 @@ export function ModelControlPointMeasurement({
 
     const viewer = createModelViewer(containerRef.current);
     const handler = new ScreenSpaceEventHandler(viewer.scene.canvas);
+    let adaptiveResolutionTimer: number | null = null;
+
+    const updateResolution = () => {
+      const tileset = tilesetRef.current;
+
+      if (!tileset || viewer.isDestroyed()) {
+        return;
+      }
+
+      updateAdaptiveModelDisplayQuality(viewer, tileset);
+    };
+    const scheduleResolutionUpdate = () => {
+      if (adaptiveResolutionTimer !== null) {
+        window.clearTimeout(adaptiveResolutionTimer);
+      }
+
+      adaptiveResolutionTimer = window.setTimeout(() => {
+        adaptiveResolutionTimer = null;
+        updateResolution();
+      }, 150);
+    };
+    const resizeObserver = new ResizeObserver(scheduleResolutionUpdate);
 
     setLocalDefaultView(viewer, cameraNavigationRef.current);
     viewerRef.current = viewer;
+    resizeObserver.observe(containerRef.current);
 
     handler.setInputAction(() => {
       const navigation = cameraNavigationRef.current;
@@ -135,28 +162,27 @@ export function ModelControlPointMeasurement({
       navigation.suppressNextClick = navigation.dragMoved;
     }, ScreenSpaceEventType.LEFT_UP);
 
-    handler.setInputAction(
-      (movement: ScreenSpaceEventHandler.MotionEvent) => {
-        const navigation = cameraNavigationRef.current;
+    handler.setInputAction((movement: ScreenSpaceEventHandler.MotionEvent) => {
+      const navigation = cameraNavigationRef.current;
 
-        if (!navigation.isDragging) {
-          return;
-        }
+      if (!navigation.isDragging) {
+        return;
+      }
 
-        const deltaX = movement.endPosition.x - movement.startPosition.x;
-        const deltaY = movement.endPosition.y - movement.startPosition.y;
+      const deltaX = movement.endPosition.x - movement.startPosition.x;
+      const deltaY = movement.endPosition.y - movement.startPosition.y;
 
-        if (Math.hypot(deltaX, deltaY) > 1) {
-          navigation.dragMoved = true;
-        }
+      if (Math.hypot(deltaX, deltaY) > 1) {
+        navigation.dragMoved = true;
+      }
 
-        rotateLocalCamera(viewer, navigation, deltaX, deltaY);
-      },
-      ScreenSpaceEventType.MOUSE_MOVE,
-    );
+      rotateLocalCamera(viewer, navigation, deltaX, deltaY);
+      scheduleResolutionUpdate();
+    }, ScreenSpaceEventType.MOUSE_MOVE);
 
     handler.setInputAction((delta: number) => {
       zoomLocalCamera(viewer, cameraNavigationRef.current, delta);
+      scheduleResolutionUpdate();
     }, ScreenSpaceEventType.WHEEL);
 
     handler.setInputAction(
@@ -237,6 +263,8 @@ export function ModelControlPointMeasurement({
         return;
       }
 
+      scheduleResolutionUpdate();
+
       if (!event.repeat) {
         setMessage("视角中心已移动，滚轮将围绕新的中心缩放。");
       }
@@ -245,6 +273,10 @@ export function ModelControlPointMeasurement({
     window.addEventListener("keydown", handleKeyDown);
 
     return () => {
+      if (adaptiveResolutionTimer !== null) {
+        window.clearTimeout(adaptiveResolutionTimer);
+      }
+      resizeObserver.disconnect();
       window.removeEventListener("keydown", handleKeyDown);
       handler.destroy();
       tilesetRef.current = null;
@@ -300,7 +332,7 @@ export function ModelControlPointMeasurement({
       setHiddenControlPointIds(new Set());
 
       const tileset = await Cesium3DTileset.fromUrl(trimmedUrl, {
-        maximumScreenSpaceError: 8,
+        maximumScreenSpaceError: MODEL_MAXIMUM_SCREEN_SPACE_ERROR,
         skipLevelOfDetail: false,
       });
 
@@ -311,6 +343,7 @@ export function ModelControlPointMeasurement({
       const radius = Math.max(tileset.boundingSphere.radius, 1);
       setModelRadius(radius);
       focusTileset(viewer, tileset, cameraNavigationRef.current);
+      updateAdaptiveModelDisplayQuality(viewer, tileset);
 
       setLoadedTileset({
         name: info?.name ?? "tileset.json",
@@ -344,11 +377,15 @@ export function ModelControlPointMeasurement({
     }
 
     setTilesetUrl(selection.url);
-    await loadTileset(selection.url, {
-      name: selection.name,
-      path: selection.path,
-      url: selection.url,
-    }, transformMode);
+    await loadTileset(
+      selection.url,
+      {
+        name: selection.name,
+        path: selection.path,
+        url: selection.url,
+      },
+      transformMode,
+    );
   }
 
   function handleUrlSubmit(event: FormEvent<HTMLFormElement>): void {
@@ -366,6 +403,7 @@ export function ModelControlPointMeasurement({
 
     if (tileset) {
       focusTileset(viewer, tileset, cameraNavigationRef.current);
+      updateAdaptiveModelDisplayQuality(viewer, tileset);
     } else {
       setLocalDefaultView(viewer, cameraNavigationRef.current);
     }
@@ -635,7 +673,9 @@ export function ModelControlPointMeasurement({
             </dl>
           ) : null}
 
-          {errorMessage ? <p className="error-message">{errorMessage}</p> : null}
+          {errorMessage ? (
+            <p className="error-message">{errorMessage}</p>
+          ) : null}
 
           <div className="control-point-search__active">
             <h3>当前控制点</h3>
@@ -698,15 +738,21 @@ export function ModelControlPointMeasurement({
                     <dl className="control-point-search__coords">
                       <div>
                         <dt>X</dt>
-                        <dd>{point.local ? formatNumber(point.local.x) : "-"}</dd>
+                        <dd>
+                          {point.local ? formatNumber(point.local.x) : "-"}
+                        </dd>
                       </div>
                       <div>
                         <dt>Y</dt>
-                        <dd>{point.local ? formatNumber(point.local.y) : "-"}</dd>
+                        <dd>
+                          {point.local ? formatNumber(point.local.y) : "-"}
+                        </dd>
                       </div>
                       <div>
                         <dt>Z</dt>
-                        <dd>{point.local ? formatNumber(point.local.z) : "-"}</dd>
+                        <dd>
+                          {point.local ? formatNumber(point.local.z) : "-"}
+                        </dd>
                       </div>
                       <div>
                         <dt>Obs</dt>
@@ -728,7 +774,9 @@ export function ModelControlPointMeasurement({
                       <button
                         className="secondary-button"
                         type="button"
-                        onClick={() => handleToggleControlPointVisibility(point)}
+                        onClick={() =>
+                          handleToggleControlPointVisibility(point)
+                        }
                         disabled={!point.local}
                       >
                         {isHidden ? "显示点" : "隐藏点"}
@@ -776,9 +824,8 @@ export function ModelControlPointMeasurement({
       <footer className="control-point-search__status">
         <span>{message}</span>
         <span>
-          坐标模式：{transformModeCoordinateText[activeTransformMode]} · 已加载控制点{" "}
-          {controlPoints.length} · 已计算{" "}
-          {exportableCount}
+          坐标模式：{transformModeCoordinateText[activeTransformMode]} ·
+          已加载控制点 {controlPoints.length} · 已计算 {exportableCount}
         </span>
       </footer>
     </>

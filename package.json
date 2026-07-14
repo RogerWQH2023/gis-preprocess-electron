@@ -16,7 +16,8 @@
     "typecheck": "tsc --noEmit --project tsconfig.app.json && tsc --noEmit --project tsconfig.node.json && tsc --noEmit --project src/main/tsconfig.json",
     "build:renderer": "vite build",
     "build": "pnpm run typecheck && pnpm run transpile:main && pnpm run build:renderer",
-    "build:app": "pnpm run build && node scripts/run-electron-builder.mjs --win --x64",
+    "stage:gdal-runtime": "node scripts/stage-gdal-node-runtime.mjs",
+    "build:app": "pnpm run build && pnpm run stage:gdal-runtime && node scripts/run-electron-builder.mjs --win --x64",
     "lint": "eslint .",
     "preview": "vite preview"
   },

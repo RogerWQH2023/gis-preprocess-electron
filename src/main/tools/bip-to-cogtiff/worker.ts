@@ -54,7 +54,7 @@ function assertNodeAbi(): void {
   }
 
   throw new Error(
-    `GDAL worker 需要 Node ABI ${requiredAbi}，当前为 ${process.version} / ABI ${process.versions.modules}。请执行 pnpm install，让 pnpm 根据 .npmrc 下载 Node 22.16.0。`
+    `GDAL worker 需要 Node ABI ${requiredAbi}，当前为 ${process.version} / ABI ${process.versions.modules}。打包应用应使用内置 Node 22.16.0；开发环境请执行 pnpm install。`
   );
 }
 

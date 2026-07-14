@@ -389,10 +389,6 @@ function buildTranslateArgs(
     `TARGET_SRS=${targetSrsWkt}`,
   ];
 
-  if (request.overwrite === true) {
-    args.push("-overwrite");
-  }
-
   if (request.bounds) {
     args.push(
       "-co",
@@ -486,8 +482,13 @@ export async function convertBipToCogTiffDirect(
     await ensureDirectory(tmpDir, "临时目录");
   }
 
-  if (request.overwrite !== true && (await pathExists(outputPath))) {
-    throw new Error(`输出文件已存在，请改名后重试：${outputPath}`);
+  if (await pathExists(outputPath)) {
+    if (request.overwrite !== true) {
+      throw new Error(`输出文件已存在，请改名后重试：${outputPath}`);
+    }
+
+    // gdal.translateAsync 不接受 -overwrite；覆盖行为在调用 GDAL 前由文件系统完成。
+    await fs.rm(outputPath, { force: true });
   }
 
   const header = await findEnviHeader(inputPath);
